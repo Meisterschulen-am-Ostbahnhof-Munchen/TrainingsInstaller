@@ -355,8 +355,21 @@ org.eclipse.ui/windows.defender.startup.check.skip=true
 - Eingebunden über den Startparameter `-pluginCustomization` (siehe Verknüpfung). Die Werte
   sind damit Vorgaben; ändert ein Teilnehmer sie in den Einstellungen, gilt seine Wahl.
 
-**Verknüpfung pro Training.** Der Installer legt je Training eine Verknüpfung im
-Startmenü des Benutzers (❓ und auf dem Desktop) an, z. B. „4diac – Training 1“:
+**Verknüpfungen – UNBEDINGT auf dem Desktop** (zusätzlich im Startmenü). Der Desktop
+ist für Schüler der schnellste Einstieg. Der Installer legt dort an:
+
+| Verknüpfung (Desktop + Startmenü) | Ziel |
+|---|---|
+| „4diac Projekte“ | Ordner `C:\ms\sl\prj` (öffnet den Explorer) |
+| „4diac – Training 1“, „4diac – Slurry Tanker“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
+
+Verknüpfungen zu Sicherungen (2.6) kommen nur ins Startmenü, damit der Desktop nicht
+zuwächst; erreichbar sind sie auch über „4diac Projekte“.
+
+Keine Verknüpfung zur „nackten“ IDE ohne `-data`: Sie würde nach dem Workspace fragen und
+standardmäßig `%USERPROFILE%\4diacIDE-workspace` anlegen, also außerhalb von `C:\ms\sl`.
+
+Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 
 | | |
 |---|---|
@@ -364,8 +377,10 @@ Startmenü des Benutzers (❓ und auf dem Desktop) an, z. B. „4diac – Traini
 | Argumente | `-data "C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace" -pluginCustomization "C:\ms\sl\tools\4diac-ide\ms-sl-customization.ini"` |
 | Ausführen in | `C:\ms\sl\tools\4diac-ide` |
 
-Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) unter
-`%APPDATA%\Microsoft\Windows\Start Menu\Programs\` – keine Admin-Rechte nötig. Durch
+Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) auf dem Desktop des Benutzers
+(`[Environment]::GetFolderPath('Desktop')` – bei OneDrive-Umleitung nicht
+`%USERPROFILE%\Desktop`) und unter `%APPDATA%\Microsoft\Windows\Start Menu\Programs\4diac\`
+– keine Admin-Rechte nötig. `--uninstall` entfernt genau diese Verknüpfungen wieder. Durch
 `-data` öffnet jede Verknüpfung direkt den richtigen Workspace, ohne Workspace-Auswahl.
 
 **Neues Projekt anlegen (zweites Empty).** Will ein Schüler ein weiteres eigenes Projekt
@@ -643,6 +658,8 @@ C:\ms\sl\
    **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
-9. Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?
+9. ~~Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?~~ → **Desktop
+   unbedingt** (plus Startmenü): „4diac Projekte“ (`C:\ms\sl\prj`) und je Training eine
+   IDE-Verknüpfung (siehe 2.5).
 10. `--new-project`: Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
     Namensprüfung ist festgelegt).
