@@ -15,9 +15,9 @@ Installiert bzw. eingerichtet werden:
 
 | Komponente     | Zweck                                         | Version          |
 |----------------|-----------------------------------------------|------------------|
-| Git            | Repos klonen, Übungsstände wechseln           | ❓ fest / latest |
-| Python         | Hilfsskripte, Generatoren                     | ❓ z. B. 3.12.x  |
-| Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** (siehe 2.1) |
+| Git for Windows (PortableGit) | Repos klonen, Übungsstände wechseln | **2.56.0.4** – festgedübelt (siehe 2.3) |
+| Python         | Hilfsskripte, Generatoren                     | **3.15.2** – festgedübelt (siehe 2.4) |
+| Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
 | `training1`    | Übungs-Repository der Schulung                | Branch/Tag ❓    |
 | weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
@@ -57,6 +57,28 @@ Installiert bzw. eingerichtet werden:
 - **Wiederholbarkeit:** Der Installer muss mehrfach ausführbar sein (idempotent) –
   bereits installierte Komponenten in der richtigen Version werden übersprungen.
 - **Lizenz:** EPL-2.0 (siehe `LICENSE`).
+- **Versionen sind festgedübelt.** Für jede Komponente steht genau eine Version mit URL
+  und SHA256 in `manifest.json`. Kein „latest“, kein automatisches Update. Erhöht wird
+  **nur manuell**: neue Version, URL und SHA256 eintragen, testen, committen. Bis dahin
+  bekommen alle Teilnehmer exakt dieselben Versionen.
+- **Download-Verfahren (für alle Komponenten gleich):** Alle Dateien kommen per HTTPS
+  direkt vom Hersteller bzw. aus unserem Release-Repo, ohne Login:
+  ```powershell
+  $tmp = "C:\ms\sl\downloads\$file.tmp"
+  Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing
+  if ((Get-FileHash $tmp -Algorithm SHA256).Hash -ne $sha256) {
+      Remove-Item $tmp; throw "SHA256 stimmt nicht: $file"
+  }
+  Move-Item $tmp "C:\ms\sl\downloads\$file" -Force
+  ```
+  Liegt die Datei schon mit korrekter SHA256 in `downloads\`, wird nicht erneut geladen.
+  Vor dem Download `[Net.ServicePointManager]::SecurityProtocol = 'Tls12'` setzen
+  (Windows PowerShell 5.1 nutzt sonst ggf. veraltete TLS-Versionen) und
+  `$ProgressPreference = 'SilentlyContinue'` (die Fortschrittsanzeige von 5.1 macht
+  große Downloads um ein Vielfaches langsamer).
+- **Entpacken:** ZIPs mit dem in Windows 10/11 enthaltenen `tar.exe`
+  (`tar -xf <zip> -C <ziel>`), nicht mit `Expand-Archive` – das ist in PowerShell 5.1
+  bei Tausenden Dateien (IDE: rund 3 900, Python: rund 2 300) sehr langsam.
 
 ### 2.1 Quelle der 4diac IDE
 
@@ -79,8 +101,24 @@ Windows-ZIP:
 - URL: <https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-release-history-milestone/releases/download/4diac-ide_3.4.0_milestone_2026-11-05_2214/4diac-ide_3.4.0-win32.win32.x86_64_milestone_2026-11-05_2214.zip>
 - SHA256: `e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9`
 
-Installation unter Windows: ZIP nach `C:\ms\sl\tools\4diac-ide\` entpacken – kein Setup,
-keine Admin-Rechte nötig.
+> **Die Version ist festgedübelt**, bis wir manuell eine andere festlegen.
+
+Installation unter Windows: ZIP nach `C:\ms\sl\tools\` entpacken (die ZIP enthält den
+Oberordner `4diac-ide\`) – kein Setup, keine Admin-Rechte nötig.
+
+> ⚠️ **ZWINGEND: Nach dem Entpacken den Ordner `C:\ms\sl\tools\4diac-ide\typelibrary`
+> komplett löschen.** Ohne diesen Schritt gilt die Installation als fehlgeschlagen.
+> Die Prüfung „bereits installiert?“ muss deshalb auch kontrollieren, dass `typelibrary`
+> **nicht** existiert – sonst wird er erneut gelöscht.
+>
+> ```powershell
+> Remove-Item 'C:\ms\sl\tools\4diac-ide\typelibrary' -Recurse -Force
+> if (Test-Path 'C:\ms\sl\tools\4diac-ide\typelibrary') { throw 'typelibrary konnte nicht gelöscht werden' }
+> ```
+>
+> Im Manifest als `"delete_after_extract": ["4diac-ide/typelibrary"]` hinterlegt,
+> damit es nicht im Code versteckt ist. (Der Ordner heißt im ZIP klein geschrieben
+> `typelibrary`; Windows unterscheidet nicht nach Groß-/Kleinschreibung.)
 
 **Release-Repos**
 
@@ -156,22 +194,89 @@ Regeln:
   gefunden würden, und **warnt im Abschlussbericht**, falls dort fremde Versionen gewinnen.
 
 Ohne Admin machbar je Komponente:
-- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`.
-  Danach `git config --system http.sslBackend schannel` (mit dem Git aus `C:\ms\sl`):
-  Git nutzt dann den Windows-Zertifikatsspeicher und funktioniert auch hinter Proxys mit
-  TLS-Prüfung. `--system` schreibt in die Konfiguration von PortableGit unter `C:\ms\sl`,
-  nicht ins Windows-System.
-- **Python:** offizieller Installer mit
-  `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0 Include_shortcuts=0 Include_pip=1`
-  (PATH setzen wir selbst, s. o.). Bewusst der **vollständige Installer** und nicht das
-  „embeddable package“: Dieses enthält weder `pip` noch `venv`, beides wird in der
-  Schulung gebraucht. Die benötigte Laufzeit (UCRT) ist seit Windows 10 Bestandteil
-  von Windows.
-- **4diac IDE:** ZIP entpacken, braucht keinen PATH-Eintrag; Verknüpfung genügt.
-  Die ZIP enthält den Oberordner `4diac-ide\` → nach `C:\ms\sl\tools\` entpacken.
+- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`, Details in 2.3.
+- **Python:** offizielles ZIP-Paket von python.org entpacken, Details in 2.4.
+- **4diac IDE:** ZIP entpacken, **danach `typelibrary` löschen** (siehe 2.1), braucht
+  keinen PATH-Eintrag; Verknüpfung genügt.
   **Java ist enthalten:** eingebettetes JRE JustJ OpenJDK 25.0.4
   (`plugins/org.eclipse.justj.openjdk.hotspot.jre.full.stripped.win32.x86_64_25.0.4…`),
   keine separate Java-Installation nötig (geprüft am Milestone 2026-11-05_2214).
+
+### 2.3 Git
+
+Verwendet wird **Git for Windows als PortableGit**:
+
+| | |
+|---|---|
+| Version  | **2.56.0.4** (Release `v2.56.0.windows.4` vom 2026-10-26) |
+| Datei    | `PortableGit-2.56.0.4-64-bit.7z.exe` (60 MB) |
+| URL      | <https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.4/PortableGit-2.56.0.4-64-bit.7z.exe> |
+| SHA256   | `b1f3e52216e2ed6882d1bebfd4d3fdf319bec40d2edbbf9fd26ec4fd3fce7ed1` (Release-Notes = GitHub-Digest) |
+| Lizenz   | GPL-2.0, kostenlos, kein Konto nötig |
+
+> **Die Version ist festgedübelt.** Der Installer installiert immer genau diese Version –
+> kein „latest“, kein automatisches Update. Erhöht wird **nur manuell**: neue Version,
+> URL und SHA256 in `manifest.json` eintragen, testen, committen. Bis dahin bekommen alle
+> Teilnehmer dieselbe Version, auch wenn es inzwischen neuere gibt.
+
+Download: direkt von GitHub (Release von Git for Windows), Verfahren siehe Abschnitt 2
+(`.tmp` → SHA256 prüfen → übernehmen).
+
+Installation ohne Admin: selbstentpackendes Archiv, kein Setup-Assistent:
+
+```powershell
+& C:\ms\sl\downloads\PortableGit-2.56.0.4-64-bit.7z.exe -o"C:\ms\sl\tools\git" -y
+& C:\ms\sl\tools\git\cmd\git.exe config --system http.sslBackend schannel
+```
+
+`--system` schreibt in die Konfiguration von PortableGit unter `C:\ms\sl`, nicht ins
+Windows-System. `schannel` = Windows-Zertifikatsspeicher, funktioniert auch hinter
+Proxys mit TLS-Prüfung.
+
+**Grafische Oberfläche:** keine zusätzliche. Die 4diac IDE bringt **EGit 8.0.0** mit
+(Eclipse-Git-Integration, geprüft im Milestone 2026-11-05_2214) – damit lassen sich
+Commit, Branch-Wechsel usw. direkt in der IDE erledigen.
+Bewusst **nicht** GitKraken: kommerziell, Konto erforderlich, für private Repos
+lizenzpflichtig, und es ersetzt das Kommandozeilen-Git nicht.
+
+### 2.4 Python
+
+Verwendet wird **CPython 3.15.2** von python.org als **ZIP-Paket** (kein Installer):
+
+| | |
+|---|---|
+| Version  | **3.15.2** (Release vom 2026-10-25, aktuell stabile Version) |
+| Datei    | `python-3.15.2-amd64.zip` (37 MB) |
+| URL      | <https://www.python.org/ftp/python/3.15.2/python-3.15.2-amd64.zip> |
+| SHA256   | `d6da9c33a32cf111e1d52b91392c83ea6a808545b646e0557f66cb6d9ee76785` |
+| Quelle SHA256 | offizieller Python-Index <https://www.python.org/ftp/python/index-windows.json> (= eigener Download) |
+| Lizenz   | PSF License, kostenlos |
+
+> **Die Version ist festgedübelt**, bis wir sie manuell erhöhen.
+
+**Warum das ZIP und nicht der klassische `.exe`-Installer:**
+- Das ZIP ist das offizielle Paket, das auch der neue *Python Install Manager* von
+  python.org verwendet. Den klassischen `.exe`-Installer gibt es **ab Python 3.16 nicht
+  mehr** (unter `ftp/python/3.16.0/` liegen nur noch ZIPs) – mit dem ZIP bleibt der Weg
+  bei späteren Versionen gleich.
+- Reines Entpacken: kein Setup, keine Registry-Einträge, keine Startmenü-Einträge,
+  keine Admin-Rechte, nichts außerhalb von `C:\ms\sl`. Deinstallieren = Ordner löschen.
+- Gleiches Verfahren wie bei Git und 4diac IDE.
+
+**Inhalt geprüft** (nicht das abgespeckte „embeddable package“): `python.exe`,
+`pythonw.exe`, `vcruntime140*.dll`, **`pip` bereits installiert** (`Lib/site-packages/pip`),
+`venv`, `ensurepip`, `tkinter` – vollständige Standardbibliothek.
+
+Installation:
+
+```powershell
+tar -xf C:\ms\sl\downloads\python-3.15.2-amd64.zip -C C:\ms\sl\tools\python
+& C:\ms\sl\tools\python\python.exe -m pip --version     # Funktionsprobe
+```
+
+Das ZIP hat keinen Oberordner (`python.exe` liegt direkt im Wurzelverzeichnis), daher
+direkt nach `tools\python` entpacken. PATH-Einträge `tools\python` und
+`tools\python\Scripts` siehe 2.2.
 
 ## 3. Architektur (Vorschlag)
 
@@ -204,19 +309,20 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
 ```json
 {
   "git": {
-    "version": "2.47.0",
-    "url": "https://github.com/git-for-windows/git/releases/download/...",
-    "sha256": "..."
+    "version": "2.56.0.4",
+    "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.4/PortableGit-2.56.0.4-64-bit.7z.exe",
+    "sha256": "b1f3e52216e2ed6882d1bebfd4d3fdf319bec40d2edbbf9fd26ec4fd3fce7ed1"
   },
   "python": {
-    "version": "3.12.7",
-    "url": "https://www.python.org/ftp/python/...",
-    "sha256": "..."
+    "version": "3.15.2",
+    "url": "https://www.python.org/ftp/python/3.15.2/python-3.15.2-amd64.zip",
+    "sha256": "d6da9c33a32cf111e1d52b91392c83ea6a808545b646e0557f66cb6d9ee76785"
   },
   "fordiac_ide": {
     "version": "3.4.0-milestone-2026-11-05_2214",
     "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-release-history-milestone/releases/download/4diac-ide_3.4.0_milestone_2026-11-05_2214/4diac-ide_3.4.0-win32.win32.x86_64_milestone_2026-11-05_2214.zip",
-    "sha256": "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9"
+    "sha256": "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9",
+    "delete_after_extract": ["4diac-ide/typelibrary"]
   },
   "repos": {
     "training1": {
@@ -256,7 +362,8 @@ C:\ms\sl\
 2. Manifest laden (lokal oder ❓ von URL)
 3. Für jede Komponente: *bereits vorhanden?* → überspringen, sonst
    herunterladen nach `downloads\<datei>.tmp` → SHA256 prüfen → erst bei Übereinstimmung
-   umbenennen und installieren/entpacken (fehlerhafte Downloads werden verworfen)
+   umbenennen und installieren/entpacken (fehlerhafte Downloads werden verworfen);
+   bei der 4diac IDE danach **`typelibrary` löschen** (Pflicht, siehe 2.1)
 4. Repositories klonen bzw. aktualisieren
 5. 4diac-Workspace einrichten (Projekte importieren, ❓ Preferences vorbelegen)
 6. Startmenü-/Desktop-Verknüpfungen ❓
