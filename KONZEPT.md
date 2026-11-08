@@ -375,6 +375,13 @@ beginnen, legt der Installer eine neue Kopie von `4diac_training1_empty` an:
 install.cmd --new-project Maehwerk
 ```
 
+0. **Namen prüfen (Pflicht, vor jedem weiteren Schritt):** nur
+   `^[A-Za-z0-9_-]{1,40}$` – also keine Leerzeichen, Umlaute, `.`, `\`, `/` oder
+   Metazeichen wie `&|<>"`. Sonst Abbruch mit Hinweis. Verhindert, dass der Name aus
+   `C:\ms\sl\prj\` herausführt (`..\`) oder in `cmd`/PowerShell Befehle einschleust.
+   Existiert `C:\ms\sl\prj\<Name>` schon → Abbruch, nichts überschreiben.
+   `Neues Projekt.cmd` übergibt den eingegebenen Namen nur an den Installer und prüft
+   ihn dort, nicht selbst in `cmd`.
 1. `4diac_training1_empty` nach `C:\ms\sl\prj\Maehwerk\` klonen.
 2. Verknüpfung „4diac – Maehwerk“ anlegen (Workspace
    `C:\ms\sl\prj\Maehwerk\Ventilsteuerung\4diacIDE-workspace`).
@@ -385,18 +392,29 @@ verschiedenen Workspaces stören sich daher nicht. Für Schüler zusätzlich als
 Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
 
 ❓ Offen:
-- Erlaubte Zeichen im Projektnamen (Vorschlag: Buchstaben, Ziffern, `-`, `_`; keine
-  Leerzeichen und Umlaute, weil der Name Teil von Pfad und Verknüpfung ist).
 - Was passiert mit dem Git-Remote der Kopie? Nur umbenennen (`origin` → `upstream`)
   genügt **nicht**: Das Branch-Tracking bleibt erhalten, ein einfaches `git push` ginge
   weiter ans Schul-Repo. Vorschlag: Fetch-URL behalten (Updates der Vorlage holen), aber
   die Push-URL ungültig setzen, damit ein Push mit klarer Fehlermeldung scheitert:
   ```
   git remote rename origin upstream
-  git remote set-url --push upstream PUSH-DEAKTIVIERT
+  git remote set-url --push upstream PUSH-DEAKTIVIERT-EIGENES-REMOTE-EINTRAGEN
   git branch --unset-upstream
   ```
   Der Schüler kann später ein eigenes Remote als `origin` eintragen.
+
+**Prüfung „IDE geöffnet?“** (für `--update` und das IDE-Update, siehe 2.6). Die Datei
+`.metadata\.lock` allein sagt nichts: Sie **bleibt nach dem Beenden liegen** (auch nach
+Absturz). Auch „lässt sich zum Schreiben öffnen“ reicht nicht – das gelingt auch bei
+laufender IDE. Zuverlässig (geprüft am 2026-11-08):
+
+1. Prozess: läuft ein `4diac-ide.exe`, dessen Pfad unter `C:\ms\sl\tools\` liegt
+   (`Win32_Process.ExecutablePath`; eine andere, privat installierte 4diac IDE zählt
+   nicht), und – für einen bestimmten Workspace – dessen `CommandLine` dessen `-data`-Pfad
+   enthält?
+2. Sperre: `.metadata\.lock` öffnen und selbst eine Bytebereich-Sperre versuchen
+   (`FileStream.Lock(0,1)` bzw. `msvcrt.locking`). Schlägt das fehl, hält eine IDE den
+   Workspace; gelingt es, sofort wieder freigeben.
 
 ### 2.6 Aktualisieren
 
@@ -410,15 +428,17 @@ Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac
 1. **Verändert?** `git status --porcelain` und lokale Commits, die nicht im Schul-Repo
    sind (`git log origin/<ref>..HEAD`). Nichts verändert → direkt weiter mit Schritt 5,
    keine Kopie.
-2. **IDE geschlossen?** Ist der Workspace noch geöffnet (`.metadata\.lock`), Abbruch mit
-   Hinweis „Bitte 4diac IDE schließen“.
+2. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
+   geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
 3. **Sicherung:** ganzen Repo-Ordner 1:1 kopieren, z. B. nach
-   `C:\ms\sl\prj\4diac_training1_sicherung_2026-11-08_1530\` – **mit** `.git`, **ohne**
+   `C:\ms\sl\prj\4diac_training1_sicherung_2026-11-08_153012\` (Zeitstempel mit
+   Sekunden; existiert der Ordner trotzdem, `_2`, `_3` … anhängen) – **mit** `.git`, **ohne**
    `.metadata` (baut das Auto-Import-Plugin beim ersten Öffnen neu auf). In der Kopie die
    Push-URL sperren wie bei `--new-project`. Die Kopie behält die Historie des Trainings,
    `git diff` zeigt genau, was der Schüler verändert hat.
 4. **Verknüpfung** für die Sicherung, z. B. „4diac – Training 1 (Sicherung 08.11.2026 15:30)“.
-5. **Original aktualisieren:** `git fetch`, `git reset --hard origin/<ref>`,
+5. **Original aktualisieren:** `git fetch`, `git checkout -f <ref>` (falls der Schüler
+   auf einem anderen Branch oder im *detached HEAD* ist), `git reset --hard origin/<ref>`,
    `git clean -fd` (ohne `-x`, damit ignorierte Dateien wie `.metadata` bleiben).
 6. **Bericht:** „Training 1 aktualisiert. Deine Änderungen liegen in: …“
 
@@ -436,8 +456,8 @@ Auslöser: Wir erhöhen die IDE-Version in `manifest.json` von Hand (festgedübe
 `C:\ms\sl\tools\4diac-ide\.ms-sl-version`. Weicht sie vom Manifest ab, wird beim
 nächsten `install.cmd` aktualisiert:
 
-1. **Läuft eine IDE?** Läuft `4diac-ide.exe` aus `C:\ms\sl\tools\` oder existiert in
-   einem Workspace unter `C:\ms\sl\prj\` ein `.metadata\.lock` → Abbruch mit Hinweis
+1. **Läuft eine IDE?** Läuft ein `4diac-ide.exe` aus `C:\ms\sl\tools\` oder ist ein
+   Workspace unter `C:\ms\sl\prj\` gesperrt (Prüfung wie in 2.5) → Abbruch mit Hinweis
    (Windows sperrt geöffnete Dateien, Löschen/Umbenennen würde fehlschlagen).
 2. **Erst laden, dann löschen:**
    1. neue ZIP nach `downloads\` laden, SHA256 prüfen,
@@ -624,4 +644,5 @@ C:\ms\sl\
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
 9. Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?
-10. `--new-project`: erlaubte Zeichen im Namen, Push-Sperre über ungültige Push-URL (siehe 2.5).
+10. `--new-project`: Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+    Namensprüfung ist festgelegt).
