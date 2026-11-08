@@ -15,7 +15,7 @@ Installiert bzw. eingerichtet werden:
 
 | Komponente     | Zweck                                         | Version          |
 |----------------|-----------------------------------------------|------------------|
-| Git            | Repos klonen, Übungsstände wechseln           | ❓ fest / latest |
+| Git for Windows (PortableGit) | Repos klonen, Übungsstände wechseln | **2.56.0.4** – festgedübelt (siehe 2.3) |
 | Python         | Hilfsskripte, Generatoren                     | ❓ z. B. 3.12.x  |
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** (siehe 2.1) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
@@ -156,11 +156,7 @@ Regeln:
   gefunden würden, und **warnt im Abschlussbericht**, falls dort fremde Versionen gewinnen.
 
 Ohne Admin machbar je Komponente:
-- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`.
-  Danach `git config --system http.sslBackend schannel` (mit dem Git aus `C:\ms\sl`):
-  Git nutzt dann den Windows-Zertifikatsspeicher und funktioniert auch hinter Proxys mit
-  TLS-Prüfung. `--system` schreibt in die Konfiguration von PortableGit unter `C:\ms\sl`,
-  nicht ins Windows-System.
+- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`, Details in 2.3.
 - **Python:** offizieller Installer mit
   `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0 Include_shortcuts=0 Include_pip=1`
   (PATH setzen wir selbst, s. o.). Bewusst der **vollständige Installer** und nicht das
@@ -172,6 +168,40 @@ Ohne Admin machbar je Komponente:
   **Java ist enthalten:** eingebettetes JRE JustJ OpenJDK 25.0.4
   (`plugins/org.eclipse.justj.openjdk.hotspot.jre.full.stripped.win32.x86_64_25.0.4…`),
   keine separate Java-Installation nötig (geprüft am Milestone 2026-11-05_2214).
+
+### 2.3 Git
+
+Verwendet wird **Git for Windows als PortableGit**:
+
+| | |
+|---|---|
+| Version  | **2.56.0.4** (Release `v2.56.0.windows.4` vom 2026-10-26) |
+| Datei    | `PortableGit-2.56.0.4-64-bit.7z.exe` (60 MB) |
+| URL      | <https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.4/PortableGit-2.56.0.4-64-bit.7z.exe> |
+| SHA256   | `b1f3e52216e2ed6882d1bebfd4d3fdf319bec40d2edbbf9fd26ec4fd3fce7ed1` (Release-Notes = GitHub-Digest) |
+| Lizenz   | GPL-2.0, kostenlos, kein Konto nötig |
+
+> **Die Version ist festgedübelt.** Der Installer installiert immer genau diese Version –
+> kein „latest“, kein automatisches Update. Erhöht wird **nur manuell**: neue Version,
+> URL und SHA256 in `manifest.json` eintragen, testen, committen. Bis dahin bekommen alle
+> Teilnehmer dieselbe Version, auch wenn es inzwischen neuere gibt.
+
+Installation ohne Admin: selbstentpackendes Archiv, kein Setup-Assistent:
+
+```powershell
+& .\PortableGit-2.56.0.4-64-bit.7z.exe -o"C:\ms\sl\tools\git" -y
+& C:\ms\sl\tools\git\cmd\git.exe config --system http.sslBackend schannel
+```
+
+`--system` schreibt in die Konfiguration von PortableGit unter `C:\ms\sl`, nicht ins
+Windows-System. `schannel` = Windows-Zertifikatsspeicher, funktioniert auch hinter
+Proxys mit TLS-Prüfung.
+
+**Grafische Oberfläche:** keine zusätzliche. Die 4diac IDE bringt **EGit 8.0.0** mit
+(Eclipse-Git-Integration, geprüft im Milestone 2026-11-05_2214) – damit lassen sich
+Commit, Branch-Wechsel usw. direkt in der IDE erledigen.
+Bewusst **nicht** GitKraken: kommerziell, Konto erforderlich, für private Repos
+lizenzpflichtig, und es ersetzt das Kommandozeilen-Git nicht.
 
 ## 3. Architektur (Vorschlag)
 
@@ -204,9 +234,9 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
 ```json
 {
   "git": {
-    "version": "2.47.0",
-    "url": "https://github.com/git-for-windows/git/releases/download/...",
-    "sha256": "..."
+    "version": "2.56.0.4",
+    "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.4/PortableGit-2.56.0.4-64-bit.7z.exe",
+    "sha256": "b1f3e52216e2ed6882d1bebfd4d3fdf319bec40d2edbbf9fd26ec4fd3fce7ed1"
   },
   "python": {
     "version": "3.12.7",
