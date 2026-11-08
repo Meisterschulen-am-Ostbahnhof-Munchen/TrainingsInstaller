@@ -18,8 +18,9 @@ Installiert bzw. eingerichtet werden:
 | Git for Windows (PortableGit) | Repos klonen, Übungsstände wechseln | **2.56.0.4** – festgedübelt (siehe 2.3) |
 | Python         | Hilfsskripte, Generatoren                     | **3.15.2** – festgedübelt (siehe 2.4) |
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
+| 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
-| `training1`    | Übungs-Repository der Schulung                | Branch/Tag ❓    |
+| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
 | weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
 
 ## 2. Rahmenbedingungen
@@ -278,6 +279,205 @@ Das ZIP hat keinen Oberordner (`python.exe` liegt direkt im Wurzelverzeichnis), 
 direkt nach `tools\python` entpacken. PATH-Einträge `tools\python` und
 `tools\python\Scripts` siehe 2.2.
 
+### 2.5 Workspaces und automatischer Projektimport
+
+**Problem:** Nach dem Klonen eines Trainings-Repos zeigt die IDE einen leeren Workspace
+(*„There are no projects in your workspace.“*). Jeder Teilnehmer muss die Projekte über
+*File → Import → Existing Projects* von Hand importieren – eine Klick-Orgie, die im
+Unterricht **bis zu 2 Stunden** kostet. Das muss vollständig automatisch gehen.
+
+**Ein Workspace pro Training.** Jedes Trainings-Repo wird nach `C:\ms\sl\prj\<repo>`
+geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace` darin:
+
+| Training | Workspace |
+|---|---|
+| Training 1 | `C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace` |
+| Training 1 (leer) | `C:\ms\sl\prj\4diac_training1_empty\Ventilsteuerung\4diacIDE-workspace` |
+| Slurry Tanker | `C:\ms\sl\prj\4diac-SlurryTanker_AX-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Easy Example Counter | `C:\ms\sl\prj\4diac_EasyExampleCounter\Ventilsteuerung\4diacIDE-workspace` |
+| usw. | `C:\ms\sl\prj\<repo>\Ventilsteuerung\4diacIDE-workspace` |
+
+Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-Ordner.
+
+> **Regel: Kein Repo enthält einen `.metadata`-Ordner** – er steht immer in `.gitignore`.
+> Der Workspace-`.metadata` entsteht beim ersten Start der IDE auf dem Teilnehmer-PC.
+> Einstellungen, die mitgeliefert werden sollen, gehören in die projektspezifischen
+> Einstellungen (Project Specific Settings) im Projekt.
+>
+> Achtung: `.gitignore` entfernt bereits versionierte Dateien **nicht**. Stand 2026-11-08
+> ist in `4diac_training1_empty` und `4diac-SlurryTanker_AX-sample` noch
+> `Ventilsteuerung/4diacIDE-workspace/.metadata/…` eingecheckt (aus der Zeit vor den
+> projektspezifischen Einstellungen). Dort einmalig `git rm -r --cached
+> Ventilsteuerung/4diacIDE-workspace/.metadata`, Einstellungen in die Projekte überführen,
+> `.gitignore` prüfen, committen.
+
+**Automatischer Import: Plugin `4diac-ide-autoimport`**
+
+Eigenes Repo mit eigenem Release-Zyklus:
+<https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-autoimport>
+
+| | |
+|---|---|
+| Version  | **1.0.0** |
+| Datei    | `de.meisterschulen.fordiac.ide.autoimport_1.0.0.jar` (4 KB) |
+| URL      | <https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-autoimport/releases/download/v1.0.0/de.meisterschulen.fordiac.ide.autoimport_1.0.0.jar> |
+| SHA256   | `afde6fd2fddef535492708c9f5e229e678fd1fa7108ff053937b8300c451ae51` |
+| Lizenz   | EPL-2.0 |
+
+> **Die Version ist festgedübelt**, bis wir sie manuell erhöhen.
+
+- Installation: die `.jar` nach `C:\ms\sl\tools\4diac-ide\dropins\` kopieren (Ordner
+  anlegen). Keine Admin-Rechte nötig.
+- Funktion: Bei jedem Start importiert das Plugin jeden direkten Unterordner des
+  Workspace, der eine `.project`-Datei enthält, nicht mit `.` beginnt (`.lib`,
+  `.metadata` werden übersprungen), dessen Projektname dem Ordnernamen entspricht und
+  der noch nicht im Workspace ist. Bereits importierte Projekte bleiben unangetastet.
+  Jeder Import steht im Log `.metadata\.log` (`Imported: test_AX`).
+- Getestet am 2026-11-08 mit dem Milestone 2026-11-05_2214 und `4diac_training1`:
+  `test_AX`, `test_B`, `test_VV` sind nach dem ersten Start ohne einen Klick da, mit
+  Git-Anzeige `[4diac_training1 main]`. Messwerte siehe [HARDWARE-BEDARF.md](HARDWARE-BEDARF.md).
+- Vorgestellt in der 4diac-Community:
+  <https://github.com/eclipse-4diac/4diac-ide/discussions/3164>
+
+**Dialoge beim ersten Start abschalten.** Der Installer schreibt
+`C:\ms\sl\tools\4diac-ide\ms-sl-customization.ini`:
+
+```ini
+org.eclipse.ui/showIntro=false
+org.eclipse.ui/windows.defender.startup.check.skip=true
+```
+
+- `showIntro=false` – keine Willkommensseite.
+- `windows.defender.startup.check.skip=true` – keine Abfrage „Microsoft Defender
+  Exclusion Check“. Die Abfrage verlangt eine Entscheidung, und die Ausnahme selbst
+  bräuchte ohnehin Admin-Rechte. Achtung: Der Präfix ist `org.eclipse.ui`, **nicht**
+  `org.eclipse.ui.workbench` (geprüft; mit dem falschen Präfix erscheint der Dialog weiter).
+- Eingebunden über den Startparameter `-pluginCustomization` (siehe Verknüpfung). Die Werte
+  sind damit Vorgaben; ändert ein Teilnehmer sie in den Einstellungen, gilt seine Wahl.
+
+**Verknüpfung pro Training.** Der Installer legt je Training eine Verknüpfung im
+Startmenü des Benutzers (❓ und auf dem Desktop) an, z. B. „4diac – Training 1“:
+
+| | |
+|---|---|
+| Ziel | `C:\ms\sl\tools\4diac-ide\4diac-ide.exe` |
+| Argumente | `-data "C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace" -pluginCustomization "C:\ms\sl\tools\4diac-ide\ms-sl-customization.ini"` |
+| Ausführen in | `C:\ms\sl\tools\4diac-ide` |
+
+Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) unter
+`%APPDATA%\Microsoft\Windows\Start Menu\Programs\` – keine Admin-Rechte nötig. Durch
+`-data` öffnet jede Verknüpfung direkt den richtigen Workspace, ohne Workspace-Auswahl.
+
+**Neues Projekt anlegen (zweites Empty).** Will ein Schüler ein weiteres eigenes Projekt
+beginnen, legt der Installer eine neue Kopie von `4diac_training1_empty` an:
+
+```
+install.cmd --new-project Maehwerk
+```
+
+0. **Namen prüfen (Pflicht, vor jedem weiteren Schritt):** nur
+   `^[A-Za-z0-9_-]{1,40}$` – also keine Leerzeichen, Umlaute, `.`, `\`, `/` oder
+   Metazeichen wie `&|<>"`. Sonst Abbruch mit Hinweis. Verhindert, dass der Name aus
+   `C:\ms\sl\prj\` herausführt (`..\`) oder in `cmd`/PowerShell Befehle einschleust.
+   Existiert `C:\ms\sl\prj\<Name>` schon → Abbruch, nichts überschreiben.
+   `Neues Projekt.cmd` übergibt den eingegebenen Namen nur an den Installer und prüft
+   ihn dort, nicht selbst in `cmd`.
+1. `4diac_training1_empty` nach `C:\ms\sl\prj\Maehwerk\` klonen.
+2. Verknüpfung „4diac – Maehwerk“ anlegen (Workspace
+   `C:\ms\sl\prj\Maehwerk\Ventilsteuerung\4diacIDE-workspace`).
+3. Beim ersten Start importiert das Plugin die Projekte automatisch.
+
+Jedes Projekt hat seinen eigenen Workspace; gleiche Projektnamen (`test_AX` …) in
+verschiedenen Workspaces stören sich daher nicht. Für Schüler zusätzlich als
+Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
+
+❓ Offen:
+- Was passiert mit dem Git-Remote der Kopie? Nur umbenennen (`origin` → `upstream`)
+  genügt **nicht**: Das Branch-Tracking bleibt erhalten, ein einfaches `git push` ginge
+  weiter ans Schul-Repo. Vorschlag: Fetch-URL behalten (Updates der Vorlage holen), aber
+  die Push-URL ungültig setzen, damit ein Push mit klarer Fehlermeldung scheitert:
+  ```
+  git remote rename origin upstream
+  git remote set-url --push upstream PUSH-DEAKTIVIERT-EIGENES-REMOTE-EINTRAGEN
+  git branch --unset-upstream
+  ```
+  Der Schüler kann später ein eigenes Remote als `origin` eintragen.
+
+**Prüfung „IDE geöffnet?“** (für `--update` und das IDE-Update, siehe 2.6). Die Datei
+`.metadata\.lock` allein sagt nichts: Sie **bleibt nach dem Beenden liegen** (auch nach
+Absturz). Auch „lässt sich zum Schreiben öffnen“ reicht nicht – das gelingt auch bei
+laufender IDE. Zuverlässig (geprüft am 2026-11-08):
+
+1. Prozess: läuft ein `4diac-ide.exe`, dessen Pfad unter `C:\ms\sl\tools\` liegt
+   (`Win32_Process.ExecutablePath`; eine andere, privat installierte 4diac IDE zählt
+   nicht), und – für einen bestimmten Workspace – dessen `CommandLine` dessen `-data`-Pfad
+   enthält?
+2. Sperre: `.metadata\.lock` öffnen und selbst eine Bytebereich-Sperre versuchen
+   (`FileStream.Lock(0,1)` bzw. `msvcrt.locking`). Schlägt das fehl, hält eine IDE den
+   Workspace; gelingt es, sofort wieder freigeben.
+
+### 2.6 Aktualisieren
+
+#### Projekte (Trainings-Repos) aktualisieren
+
+Grundsatz: **Der Schüler verliert nie etwas.** Hat er eine Übung verändert, wird vorher
+eine Sicherungskopie angelegt.
+
+Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac_training1`.
+
+1. **Verändert?** `git status --porcelain` und lokale Commits, die nicht im Schul-Repo
+   sind (`git log origin/<ref>..HEAD`). Nichts verändert → direkt weiter mit Schritt 5,
+   keine Kopie.
+2. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
+   geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
+3. **Sicherung:** ganzen Repo-Ordner 1:1 kopieren, z. B. nach
+   `C:\ms\sl\prj\4diac_training1_sicherung_2026-11-08_153012\` (Zeitstempel mit
+   Sekunden; existiert der Ordner trotzdem, `_2`, `_3` … anhängen) – **mit** `.git`, **ohne**
+   `.metadata` (baut das Auto-Import-Plugin beim ersten Öffnen neu auf). In der Kopie die
+   Push-URL sperren wie bei `--new-project`. Die Kopie behält die Historie des Trainings,
+   `git diff` zeigt genau, was der Schüler verändert hat.
+4. **Verknüpfung** für die Sicherung, z. B. „4diac – Training 1 (Sicherung 08.11.2026 15:30)“.
+5. **Original aktualisieren:** `git fetch`, `git checkout -f <ref>` (falls der Schüler
+   auf einem anderen Branch oder im *detached HEAD* ist), `git reset --hard origin/<ref>`,
+   `git clean -fd` (ohne `-x`, damit ignorierte Dateien wie `.metadata` bleiben).
+6. **Bericht:** „Training 1 aktualisiert. Deine Änderungen liegen in: …“
+
+Bewusst **nicht** in einen Klon von `_empty` kopieren: Die Kopie hätte dann die Historie
+von `_empty`, ein Vergleich zeigte alles als geändert. Die einfache Kopie ist leichter
+nachvollziehbar.
+
+❓ Sicherungen sammeln sich an (ca. 100 MB je Stück, unkritisch bei 250 GB SSD). Später
+evtl. `--cleanup` zum Löschen alter Sicherungen.
+
+#### 4diac IDE aktualisieren
+
+Auslöser: Wir erhöhen die IDE-Version in `manifest.json` von Hand (festgedübelt, siehe
+2.1). Der Installer merkt sich die installierte Version in
+`C:\ms\sl\tools\4diac-ide\.ms-sl-version`. Weicht sie vom Manifest ab, wird beim
+nächsten `install.cmd` aktualisiert:
+
+1. **Läuft eine IDE?** Läuft ein `4diac-ide.exe` aus `C:\ms\sl\tools\` oder ist ein
+   Workspace unter `C:\ms\sl\prj\` gesperrt (Prüfung wie in 2.5) → Abbruch mit Hinweis
+   (Windows sperrt geöffnete Dateien, Löschen/Umbenennen würde fehlschlagen).
+2. **Erst laden, dann löschen:**
+   1. neue ZIP nach `downloads\` laden, SHA256 prüfen,
+   2. nach `C:\ms\sl\tools\4diac-ide.neu\` entpacken,
+   3. dort **`typelibrary` löschen** (Pflicht, siehe 2.1), Auto-Import-Plugin nach
+      `dropins\` kopieren, `ms-sl-customization.ini` und `.ms-sl-version` schreiben,
+   4. erst wenn alles geklappt hat: `tools\4diac-ide` löschen und `4diac-ide.neu` in
+      `4diac-ide` umbenennen.
+
+   Bricht unterwegs etwas ab (z. B. Internet weg), bleibt die alte IDE funktionsfähig.
+3. **`.metadata` in allen Workspaces unter `C:\ms\sl\prj\` löschen** (auch in den
+   Sicherungen) – nur bei einem Versionswechsel. Damit gibt es keine Probleme mit
+   veralteten Zwischenspeichern/Typindizes der alten Version. Verloren gehen nur
+   IDE-weite Einstellungen (Window → Preferences) und das Fensterlayout; die Projekte
+   holt das Auto-Import-Plugin beim nächsten Start zurück, projektspezifische
+   Einstellungen liegen im Projekt und bleiben erhalten.
+
+Die Verknüpfungen zeigen weiter auf `tools\4diac-ide\4diac-ide.exe` und bleiben
+unverändert. ❓ Alte IDE-ZIPs aus `downloads\` löschen (spart ca. 300 MB je Version)?
+
 ## 3. Architektur (Vorschlag)
 
 ### 3.1 Henne-Ei-Problem
@@ -286,7 +486,9 @@ Python soll installiert werden, kann also nicht Voraussetzung für den Installer
 Daher zweistufig:
 
 0. **Starter** – `install.cmd` (Doppelklick), ruft auf:
-   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"`
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" %*`
+   (`%*` reicht alle Argumente wie `--new-project Maehwerk` an den Bootstrap weiter; der
+   Bootstrap gibt sie unverändert an den Python-Hauptinstaller weiter, der sie auswertet.)
    Nötig, weil Windows `.ps1`-Skripte standardmäßig blockiert (Ausführungsrichtlinie
    `Restricted`/`RemoteSigned`, Internet-Markierung bei heruntergeladenen Dateien).
    `-ExecutionPolicy Bypass` gilt nur für diesen einen Aufruf, keine Systemänderung.
@@ -324,11 +526,37 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
     "sha256": "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9",
     "delete_after_extract": ["4diac-ide/typelibrary"]
   },
+  "fordiac_autoimport": {
+    "version": "1.0.0",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-autoimport/releases/download/v1.0.0/de.meisterschulen.fordiac.ide.autoimport_1.0.0.jar",
+    "sha256": "afde6fd2fddef535492708c9f5e229e678fd1fa7108ff053937b8300c451ae51",
+    "target": "tools/4diac-ide/dropins"
+  },
   "repos": {
-    "training1": {
+    "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
       "ref": "main",
-      "target": "workspace/training1"
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Training 1"
+    },
+    "4diac_training1_empty": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
+      "ref": "main",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Training 1 (leer)",
+      "template_for_new_projects": true
+    },
+    "4diac-SlurryTanker_AX-sample": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
+      "ref": "main",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Slurry Tanker"
+    },
+    "4diac_EasyExampleCounter": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
+      "ref": "main",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Easy Example Counter"
     }
   }
 }
@@ -336,6 +564,10 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
 
 Schlüssel `fordiac_ide`: „fordiac“ ist der 4diac-interne Name (`org.eclipse.fordiac`)
 und vermeidet einen Schlüssel mit führender Ziffer.
+
+`repos`: Der Schlüssel ist der Repo-Name und zugleich der Ordner unter `C:\ms\sl\prj\`.
+`workspace` ist relativ zum Repo-Ordner, `shortcut` der Name der Verknüpfung.
+`template_for_new_projects` markiert das Repo, das `--new-project` kopiert.
 
 Vorteile: neue Schulung = neues Manifest; Versionen werden festgenagelt; Prüfsummen
 sichern die Downloads ab.
@@ -350,8 +582,17 @@ C:\ms\sl\
 │   ├── git\
 │   ├── python\
 │   └── 4diac-ide\
-├── workspace\            ← 4diac-Workspace, vorkonfiguriert
-│   └── training1\
+│       ├── dropins\
+│       │   └── de.meisterschulen.fordiac.ide.autoimport_1.0.0.jar
+│       └── ms-sl-customization.ini
+├── prj\                  ← ein Ordner pro Trainings-Repo (git clone)
+│   ├── 4diac_training1\
+│   │   └── Ventilsteuerung\
+│   │       └── 4diacIDE-workspace\   ← Workspace für Training 1 (-data)
+│   ├── 4diac_training1_empty\
+│   ├── 4diac-SlurryTanker_AX-sample\
+│   ├── 4diac_EasyExampleCounter\
+│   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── downloads\            ← Cache, ermöglicht Offline-Wiederholung
 └── install.log
 ```
@@ -360,19 +601,25 @@ C:\ms\sl\
 
 1. Umgebungsprüfung (OS, Architektur, freier Speicher, Internet)
 2. Manifest laden (lokal oder ❓ von URL)
-3. Für jede Komponente: *bereits vorhanden?* → überspringen, sonst
+3. Für jede Komponente: *bereits in der Manifest-Version vorhanden?* → überspringen
+   (4diac IDE: Vergleich mit `.ms-sl-version`; bei abweichender Version Update nach 2.6
+   inkl. Löschen von `.metadata`), sonst
    herunterladen nach `downloads\<datei>.tmp` → SHA256 prüfen → erst bei Übereinstimmung
    umbenennen und installieren/entpacken (fehlerhafte Downloads werden verworfen);
-   bei der 4diac IDE danach **`typelibrary` löschen** (Pflicht, siehe 2.1)
-4. Repositories klonen bzw. aktualisieren
-5. 4diac-Workspace einrichten (Projekte importieren, ❓ Preferences vorbelegen)
-6. Startmenü-/Desktop-Verknüpfungen ❓
-7. Abschlussbericht: was installiert, was übersprungen, was fehlgeschlagen
+   bei der 4diac IDE danach **`typelibrary` löschen** (Pflicht, siehe 2.1);
+   Auto-Import-Plugin nach `tools\4diac-ide\dropins\` kopieren,
+   `ms-sl-customization.ini` schreiben (siehe 2.5)
+4. Repositories nach `C:\ms\sl\prj\<repo>` klonen bzw. aktualisieren
+5. Verknüpfung pro Training anlegen (`-data <workspace>`, siehe 2.5) – den Import der
+   Projekte übernimmt das Plugin beim ersten Start der IDE
+6. Abschlussbericht: was installiert, was übersprungen, was fehlgeschlagen
 
 ## 5. Weitere Funktionen
 
+- [ ] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5)
 - [ ] `--check` – nur prüfen, nichts verändern
-- [ ] `--reset-training` – Übungs-Repo auf Ausgangszustand zurücksetzen
+- [ ] `--update [<repo>]` – Trainings aktualisieren, vorher Sicherung bei Änderungen
+  (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] ❓ Aktualisierung des Installers selbst
 
@@ -396,3 +643,6 @@ C:\ms\sl\
    **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
+9. Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?
+10. `--new-project`: Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+    Namensprüfung ist festgelegt).
