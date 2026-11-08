@@ -24,44 +24,32 @@ Installiert bzw. eingerichtet werden:
 
 ## 2. Rahmenbedingungen
 
-- **Zielplattform:** **Windows 10/11 x64 hat Vorrang.** macOS und Linux nur, wenn es mit
-  wenig Aufwand geht – sonst ist der Installer **Windows only**. Die Architektur soll
-  Mac/Linux später nicht verbauen, aber es wird nicht vorab dafür gebaut.
-- **Basisordner:** `C:\ms\sl` (fest vorgegeben).
-- **Rechte:** **Ohne Administratorrechte.** Ein Ordner direkt unter `C:\` lässt sich unter
-  Windows standardmäßig auch ohne Admin anlegen; alle Werkzeuge werden portabel bzw.
-  als Benutzer-Installation nach `C:\ms\sl` gelegt.
+- **Zielgeräte:** **Persönliche Notebooks** an den
+  [Meisterschulen am Ostbahnhof](https://www.meisterschulen-muenchen.de/Landmaschinenmechanik_10_0.html).
+  **Ein Gerät = eine Person = ein Windows-Login.** Gemeinsam genutzte PCs gibt es nicht.
 
-### 2.2 PATH ohne Admin
+  | Gerät              | Beschaffung | Admin-Rechte |
+  |--------------------|-------------|--------------|
+  | Schüler-Notebook   | privat      | **ja** (Pflicht laut Schulvorgabe) |
+  | Lehrer-Notebook    | ❓ dienstlich/verwaltet | **nein** |
 
-Geht: Windows hat neben dem System-PATH (`HKLM`, braucht Admin) einen **Benutzer-PATH**
-(`HKCU\Environment`), den jeder Benutzer selbst ändern darf. Windows hängt beide zusammen.
-
-```powershell
-$add  = @('C:\ms\sl\tools\git\cmd', 'C:\ms\sl\tools\python', 'C:\ms\sl\tools\python\Scripts')
-$path = [Environment]::GetEnvironmentVariable('Path', 'User')
-$parts = @($path -split ';' | Where-Object { $_ })
-foreach ($p in $add) { if ($parts -notcontains $p) { $parts += $p } }
-[Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
-```
-
-Regeln:
-- **Nicht `setx` verwenden** – schneidet bei 1024 Zeichen ab und zerstört so den PATH.
-- Nur **eigene Einträge ergänzen/entfernen**, nie den ganzen PATH überschreiben
-  (idempotent: Eintrag nur hinzufügen, wenn noch nicht vorhanden).
-- Wirkt erst in **neu geöffneten** Terminals/Programmen; bereits offene Fenster sehen
-  die Änderung nicht. Der Installer setzt zusätzlich `$env:Path` im eigenen Prozess,
-  damit die folgenden Schritte (z. B. `git clone`) sofort funktionieren.
-- `--uninstall` entfernt genau diese Einträge wieder.
-- Benutzer-PATH steht **hinter** dem System-PATH: Ist z. B. schon ein anderes Python
-  systemweit installiert, gewinnt dieses. ❓ Prüfen und warnen.
-
-Ohne Admin machbar je Komponente:
-- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`.
-- **Python:** offizieller Installer mit
-  `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0`
-  (PATH setzen wir selbst, s. o.).
-- **4diac IDE:** ZIP entpacken, braucht keinen PATH-Eintrag; Verknüpfung genügt.
+  Grundlage für Schüler-Notebooks: [Notebookanforderungen der Schule](https://www.meisterschulen-muenchen.de/documents/meisterschulen/fachbereiche/it-admin/beiblatt_notebookanforderung.pdf)
+  (Stand 16.07.2024):
+  - Windows 10/11 (Pro) 64-Bit, Intel/AMD x64; „Windows 10 S“, Windows ≤ 8.1 nicht zulässig
+  - macOS/Linux und ARM-Geräte (z. B. Macbooks mit M-Prozessor) sind an der Schule
+    **nicht zugelassen**
+- **Zielplattform:** daraus folgt **Windows only (Windows 10/11 x64)**. macOS/Linux
+  werden nicht unterstützt.
+- **Rechte:** **Der Installer muss ohne Administratorrechte laufen**, weil Lehrkräfte
+  keine haben. Auch auf Schüler-Notebooks wird Admin bewusst nicht verwendet (keine
+  UAC-Abfrage, ein einheitlicher Weg für alle Geräte). Alle Werkzeuge werden portabel
+  bzw. als Benutzer-Installation nach `C:\ms\sl` gelegt.
+- **Basisordner:** `C:\ms\sl` (fest vorgegeben). Ohne Admin lässt sich ein Ordner direkt
+  unter `C:\` anlegen – **auf einem Lehrer-Notebook ohne Admin-Rechte getestet
+  (2026-11-08): funktioniert.** Der Installer prüft trotzdem vorab, ob er in `C:\ms\sl`
+  schreiben darf, und bricht sonst mit klarer Meldung ab.
+  Da jedes Gerät nur einen Benutzer hat, sind die geerbten Schreibrechte auf `C:\ms\sl`
+  unkritisch.
 - **Netzwerk:** **Während der Installation wird Internet vorausgesetzt.** Ein Offline-Paket
   ist nicht vorgesehen. In der Schulung selbst ist nicht immer Internet da – nach der
   Installation muss daher **alles offline funktionieren** (keine Nachladungen beim
@@ -117,6 +105,45 @@ Warum GitHub Releases:
 - Lizenz: 4diac steht unter EPL-2.0, Weitergabe der Binärdateien ist erlaubt
   (Lizenzdateien sind im ZIP enthalten).
 
+### 2.2 PATH ohne Admin
+
+Geht: Windows hat neben dem System-PATH (`HKLM`, braucht Admin) einen **Benutzer-PATH**
+(`HKCU\Environment`), den jeder Benutzer selbst ändern darf. Windows hängt beide zusammen.
+
+```powershell
+$add   = @('C:\ms\sl\tools\git\cmd', 'C:\ms\sl\tools\python', 'C:\ms\sl\tools\python\Scripts')
+$path  = [Environment]::GetEnvironmentVariable('Path', 'User')       # kann $null sein
+$parts = @($path -split ';' | Where-Object { $_.Trim() } | ForEach-Object { $_.TrimEnd('\') })
+foreach ($p in $add) { if ($parts -notcontains $p) { $parts += $p } }  # -notcontains: ohne Groß/klein
+[Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
+# SetEnvironmentVariable(..., 'User') sendet WM_SETTINGCHANGE selbst – kein eigener Win32-Aufruf nötig.
+```
+
+Regeln:
+- **Nicht `setx` verwenden** – schneidet bei 1024 Zeichen ab und zerstört so den PATH.
+- Nur **eigene Einträge ergänzen/entfernen**, nie den ganzen PATH überschreiben
+  (idempotent: Eintrag nur hinzufügen, wenn noch nicht vorhanden).
+- Wirkt erst in **neu geöffneten** Terminals/Programmen; bereits offene Fenster sehen
+  die Änderung nicht. Der Installer stellt die eigenen Pfade zusätzlich im eigenen
+  Prozess **voran** (`$env:Path = "<eigene Pfade>;$env:Path"`), damit die folgenden
+  Schritte sofort und garantiert mit den eigenen Werkzeugen laufen.
+- `--uninstall` entfernt genau diese Einträge wieder.
+- Benutzer-PATH steht **hinter** dem System-PATH: Ist z. B. schon ein anderes Python
+  systemweit installiert, gewinnt dieses in neuen Terminals. Der Installer selbst ist
+  davon nicht betroffen (Pfade im eigenen Prozess vorangestellt). Am Ende prüft er mit
+  `Get-Command git, python`, welche Programme in einem neuen Terminal gefunden würden,
+  und **warnt im Abschlussbericht**, falls dort fremde Versionen gewinnen.
+
+Ohne Admin machbar je Komponente:
+- **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`.
+- **Python:** offizieller Installer mit
+  `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0`
+  (PATH setzen wir selbst, s. o.). Bewusst der **vollständige Installer** und nicht das
+  „embeddable package“: Dieses enthält weder `pip` noch `venv`, beides wird in der
+  Schulung gebraucht. Die benötigte Laufzeit (UCRT) ist seit Windows 10 Bestandteil
+  von Windows.
+- **4diac IDE:** ZIP entpacken, braucht keinen PATH-Eintrag; Verknüpfung genügt.
+
 ## 3. Architektur (Vorschlag)
 
 ### 3.1 Henne-Ei-Problem
@@ -148,7 +175,7 @@ version = "3.12.7"
 url     = "https://www.python.org/ftp/python/..."
 sha256  = "..."
 
-[fordiac_ide]
+[fordiac_ide]   # „fordiac“ = 4diac-interner Name (org.eclipse.fordiac); Schlüssel ohne führende Ziffer
 version = "3.4.0-milestone-2026-11-05_2214"
 url     = "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-release-history-milestone/releases/download/4diac-ide_3.4.0_milestone_2026-11-05_2214/4diac-ide_3.4.0-win32.win32.x86_64_milestone_2026-11-05_2214.zip"
 sha256  = "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9"
@@ -183,7 +210,8 @@ C:\ms\sl\
 1. Umgebungsprüfung (OS, Architektur, freier Speicher, Internet)
 2. Manifest laden (lokal oder ❓ von URL)
 3. Für jede Komponente: *bereits vorhanden?* → überspringen, sonst
-   herunterladen → Prüfsumme prüfen → installieren/entpacken
+   herunterladen nach `downloads\<datei>.tmp` → SHA256 prüfen → erst bei Übereinstimmung
+   umbenennen und installieren/entpacken (fehlerhafte Downloads werden verworfen)
 4. Repositories klonen bzw. aktualisieren
 5. 4diac-Workspace einrichten (Projekte importieren, ❓ Preferences vorbelegen)
 6. Startmenü-/Desktop-Verknüpfungen ❓
@@ -203,7 +231,7 @@ C:\ms\sl\
 
 ## 7. Offene Fragen (Zusammenfassung)
 
-1. ~~Welche Plattformen außer Windows?~~ → Windows hat Vorrang, ggf. Windows only.
+1. ~~Welche Plattformen außer Windows?~~ → **Windows only** (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
 2. ~~Admin-Rechte verfügbar oder nicht?~~ → Ohne Admin; PATH über Benutzer-PATH (2.2).
 3. ~~Offline-Betrieb nötig?~~ → Installation online; danach muss alles offline laufen.
 4. Eigene Downloads (portable) oder `winget`/Chocolatey/Scoop?
@@ -211,4 +239,8 @@ C:\ms\sl\
    GitHub Release (siehe 2.1). Offen: wird FORTE benötigt?
 6. Welche „weiteren“ Komponenten?
 7. Ein Manifest oder Profile pro Schulung?
-8. Verteilung an Teilnehmer: Einzeiler (`irm … | iex`), ZIP, oder USB-Stick?
+8. Verteilung an Teilnehmer: Einzeiler, ZIP, oder USB-Stick?
+   Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
+   **nicht** verwendet. Falls Einzeiler, dann so, dass das Skript erst als Datei
+   gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
+   alles Weitere prüft der Installer per SHA256 aus dem Manifest).
