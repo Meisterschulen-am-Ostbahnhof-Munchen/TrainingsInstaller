@@ -398,6 +398,66 @@ Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
   ```
   Der Schüler kann später ein eigenes Remote als `origin` eintragen.
 
+### 2.6 Aktualisieren
+
+#### Projekte (Trainings-Repos) aktualisieren
+
+Grundsatz: **Der Schüler verliert nie etwas.** Hat er eine Übung verändert, wird vorher
+eine Sicherungskopie angelegt.
+
+Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac_training1`.
+
+1. **Verändert?** `git status --porcelain` und lokale Commits, die nicht im Schul-Repo
+   sind (`git log origin/<ref>..HEAD`). Nichts verändert → direkt weiter mit Schritt 5,
+   keine Kopie.
+2. **IDE geschlossen?** Ist der Workspace noch geöffnet (`.metadata\.lock`), Abbruch mit
+   Hinweis „Bitte 4diac IDE schließen“.
+3. **Sicherung:** ganzen Repo-Ordner 1:1 kopieren, z. B. nach
+   `C:\ms\sl\prj\4diac_training1_sicherung_2026-11-08_1530\` – **mit** `.git`, **ohne**
+   `.metadata` (baut das Auto-Import-Plugin beim ersten Öffnen neu auf). In der Kopie die
+   Push-URL sperren wie bei `--new-project`. Die Kopie behält die Historie des Trainings,
+   `git diff` zeigt genau, was der Schüler verändert hat.
+4. **Verknüpfung** für die Sicherung, z. B. „4diac – Training 1 (Sicherung 08.11.2026 15:30)“.
+5. **Original aktualisieren:** `git fetch`, `git reset --hard origin/<ref>`,
+   `git clean -fd` (ohne `-x`, damit ignorierte Dateien wie `.metadata` bleiben).
+6. **Bericht:** „Training 1 aktualisiert. Deine Änderungen liegen in: …“
+
+Bewusst **nicht** in einen Klon von `_empty` kopieren: Die Kopie hätte dann die Historie
+von `_empty`, ein Vergleich zeigte alles als geändert. Die einfache Kopie ist leichter
+nachvollziehbar.
+
+❓ Sicherungen sammeln sich an (ca. 100 MB je Stück, unkritisch bei 250 GB SSD). Später
+evtl. `--cleanup` zum Löschen alter Sicherungen.
+
+#### 4diac IDE aktualisieren
+
+Auslöser: Wir erhöhen die IDE-Version in `manifest.json` von Hand (festgedübelt, siehe
+2.1). Der Installer merkt sich die installierte Version in
+`C:\ms\sl\tools\4diac-ide\.ms-sl-version`. Weicht sie vom Manifest ab, wird beim
+nächsten `install.cmd` aktualisiert:
+
+1. **Läuft eine IDE?** Läuft `4diac-ide.exe` aus `C:\ms\sl\tools\` oder existiert in
+   einem Workspace unter `C:\ms\sl\prj\` ein `.metadata\.lock` → Abbruch mit Hinweis
+   (Windows sperrt geöffnete Dateien, Löschen/Umbenennen würde fehlschlagen).
+2. **Erst laden, dann löschen:**
+   1. neue ZIP nach `downloads\` laden, SHA256 prüfen,
+   2. nach `C:\ms\sl\tools\4diac-ide.neu\` entpacken,
+   3. dort **`typelibrary` löschen** (Pflicht, siehe 2.1), Auto-Import-Plugin nach
+      `dropins\` kopieren, `ms-sl-customization.ini` und `.ms-sl-version` schreiben,
+   4. erst wenn alles geklappt hat: `tools\4diac-ide` löschen und `4diac-ide.neu` in
+      `4diac-ide` umbenennen.
+
+   Bricht unterwegs etwas ab (z. B. Internet weg), bleibt die alte IDE funktionsfähig.
+3. **`.metadata` in allen Workspaces unter `C:\ms\sl\prj\` löschen** (auch in den
+   Sicherungen) – nur bei einem Versionswechsel. Damit gibt es keine Probleme mit
+   veralteten Zwischenspeichern/Typindizes der alten Version. Verloren gehen nur
+   IDE-weite Einstellungen (Window → Preferences) und das Fensterlayout; die Projekte
+   holt das Auto-Import-Plugin beim nächsten Start zurück, projektspezifische
+   Einstellungen liegen im Projekt und bleiben erhalten.
+
+Die Verknüpfungen zeigen weiter auf `tools\4diac-ide\4diac-ide.exe` und bleiben
+unverändert. ❓ Alte IDE-ZIPs aus `downloads\` löschen (spart ca. 300 MB je Version)?
+
 ## 3. Architektur (Vorschlag)
 
 ### 3.1 Henne-Ei-Problem
@@ -536,7 +596,8 @@ C:\ms\sl\
 
 - [ ] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5)
 - [ ] `--check` – nur prüfen, nichts verändern
-- [ ] `--reset-training` – Übungs-Repo auf Ausgangszustand zurücksetzen
+- [ ] `--update [<repo>]` – Trainings aktualisieren, vorher Sicherung bei Änderungen
+  (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] ❓ Aktualisierung des Installers selbst
 
