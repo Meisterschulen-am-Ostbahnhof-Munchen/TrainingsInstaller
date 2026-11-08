@@ -361,13 +361,31 @@ ist für Schüler der schnellste Einstieg. Der Installer legt dort an:
 | Verknüpfung (Desktop + Startmenü) | Ziel |
 |---|---|
 | „4diac Projekte“ | Ordner `C:\ms\sl\prj` (öffnet den Explorer) |
+| „4diac IDE“ | 4diac IDE mit Workspace-Auswahl (siehe unten) |
 | „4diac – Training 1“, „4diac – Slurry Tanker“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
 
 Verknüpfungen zu Sicherungen (2.6) kommen nur ins Startmenü, damit der Desktop nicht
 zuwächst; erreichbar sind sie auch über „4diac Projekte“.
 
-Keine Verknüpfung zur „nackten“ IDE ohne `-data`: Sie würde nach dem Workspace fragen und
-standardmäßig `%USERPROFILE%\4diacIDE-workspace` anlegen, also außerhalb von `C:\ms\sl`.
+Zusätzlich **„4diac IDE“** (Desktop + Startmenü) ohne festen Workspace: Sie zeigt beim
+Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
+`%USERPROFILE%\4diacIDE-workspace` (außerhalb von `C:\ms\sl`) vorgeschlagen wird:
+
+- Argumente: `-data @noDefault -pluginCustomization "C:\ms\sl\tools\4diac-ide\ms-sl-customization.ini"`
+  (`@noDefault` erzwingt die Auswahl).
+- Der Installer füllt die Liste „Recent Workspaces“ mit allen Trainings-Workspaces vor,
+  in `C:\ms\sl\tools\4diac-ide\configuration\.settings\org.eclipse.ui.ide.prefs`:
+  ```ini
+  eclipse.preferences.version=1
+  MAX_RECENT_WORKSPACES=10
+  RECENT_WORKSPACES=C\:\\ms\\sl\\prj\\4diac_training1\\Ventilsteuerung\\4diacIDE-workspace\nC\:\\ms\\sl\\prj\\...
+  RECENT_WORKSPACES_PROTOCOL=3
+  SHOW_RECENT_WORKSPACES=true
+  SHOW_WORKSPACE_SELECTION_DIALOG=true
+  ```
+  (Einträge durch `\n` getrennt, `\` und `:` escaped; der erste Eintrag ist vorausgewählt.)
+  Geprüft am 2026-11-08: Die Auswahl zeigt die vorbelegten Workspaces als anklickbare Liste.
+- Bei jedem `--update`/`--new-project` wird die Liste neu geschrieben.
 
 Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 
@@ -659,7 +677,7 @@ C:\ms\sl\
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
 9. ~~Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?~~ → **Desktop
-   unbedingt** (plus Startmenü): „4diac Projekte“ (`C:\ms\sl\prj`) und je Training eine
-   IDE-Verknüpfung (siehe 2.5).
+   unbedingt** (plus Startmenü): „4diac Projekte“ (`C:\ms\sl\prj`), „4diac IDE“ mit
+   Workspace-Auswahl und je Training eine IDE-Verknüpfung (siehe 2.5).
 10. `--new-project`: Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
     Namensprüfung ist festgelegt).
