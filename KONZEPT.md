@@ -383,6 +383,14 @@ Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
   (Einträge durch `\n` getrennt, `\` und `:` escaped; der erste Eintrag ist vorausgewählt.)
   Geprüft am 2026-11-08: Die Auswahl zeigt die vorbelegten Workspaces als anklickbare Liste.
 - Bei jedem `--update`/`--new-project` wird die Liste neu geschrieben.
+- „Ausführen in“ der Verknüpfung: **`C:\ms\sl\prj`**. Grund (geprüft am 2026-11-08): Ist
+  die Liste leer, schlägt die Auswahl `<Ausführen in>\workspace` vor – ein
+  `-Dosgi.instance.area.default` in `4diac-ide.ini` wird dabei ignoriert. So bleibt auch
+  dieser Ersatzvorschlag innerhalb von `C:\ms\sl`.
+
+> **Regel: Es entsteht nie ein Workspace außerhalb von `C:\ms\sl`.** Jede Verknüpfung
+> startet entweder mit festem `-data` unter `C:\ms\sl\prj\` oder mit der vorbelegten
+> Workspace-Auswahl.
 
 Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 
@@ -395,7 +403,14 @@ Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) auf dem Desktop des Benutzers
 (`[Environment]::GetFolderPath('Desktop')` – bei OneDrive-Umleitung nicht
 `%USERPROFILE%\Desktop`) und unter `%APPDATA%\Microsoft\Windows\Start Menu\Programs\4diac\`
-– keine Admin-Rechte nötig. `--uninstall` entfernt genau diese Verknüpfungen wieder. Durch
+– keine Admin-Rechte nötig.
+
+**Keine doppelten Verknüpfungen.** Jede Verknüpfung hat einen festen Dateinamen (z. B.
+`4diac – Training 1.lnk`). Existiert sie schon, wird sie **überschrieben**, nicht
+daneben neu angelegt – ein zweiter Lauf von `install.cmd` ändert also nichts. Der
+Installer führt eine Liste aller angelegten Verknüpfungen in `C:\ms\sl\shortcuts.json`;
+daraus entfernt er Verknüpfungen zu Trainings, die es nicht mehr gibt, und
+`--uninstall` löscht genau diese Verknüpfungen wieder (keine fremden). Durch
 `-data` öffnet jede Verknüpfung direkt den richtigen Workspace, ohne Workspace-Auswahl.
 
 **Neues Projekt anlegen (zweites Empty).** Will ein Schüler ein weiteres eigenes Projekt
@@ -476,10 +491,13 @@ Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac
    **Kein `git clean`:** Neue Dateien, die der Schüler selbst angelegt hat (nicht
    versioniert), bleiben unangetastet.
 5. **Sicherung zurückschreiben:** Jede gemerkte `.SUB` als
-   `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben und dabei den
-   **Typnamen in der Datei mit umbenennen** (`Name`-Attribut des Wurzelelements
-   `SubAppType`). Sonst gäbe es in 4diac zwei Typen mit demselben Namen. Existiert der
-   Dateiname schon, `_2`, `_3` … anhängen.
+   `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben (Endung in
+   der Schreibweise des Originals, `.SUB` oder `.sub`) und dabei **in der Datei den
+   Typnamen mit umbenennen**: `Name`-Attribut des Wurzelelements
+   `<SubAppType Name="…">` = neuer Dateiname ohne Endung. Sonst gäbe es in 4diac zwei
+   Typen mit demselben Namen. Geprüft an `ChainOfActionsDemo.sub` aus Training 1: Der
+   Typname steht nur dort, keine andere Datei verweist darauf. Existiert der Dateiname
+   schon, `_2`, `_3` … anhängen.
 6. **Bericht:** „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
    test_AX/Uebung1_sicherung_20261108_153012.SUB …“
 
