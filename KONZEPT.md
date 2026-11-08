@@ -364,9 +364,6 @@ ist für Schüler der schnellste Einstieg. Der Installer legt dort an:
 | „4diac IDE“ | 4diac IDE mit Workspace-Auswahl (siehe unten) |
 | „4diac – Training 1“, „4diac – Slurry Tanker“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
 
-Verknüpfungen zu Sicherungen (2.6) kommen nur ins Startmenü, damit der Desktop nicht
-zuwächst; erreichbar sind sie auch über „4diac Projekte“.
-
 Zusätzlich **„4diac IDE“** (Desktop + Startmenü) ohne festen Workspace: Sie zeigt beim
 Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
 `%USERPROFILE%\4diacIDE-workspace` (außerhalb von `C:\ms\sl`) vorgeschlagen wird:
@@ -453,34 +450,44 @@ laufender IDE. Zuverlässig (geprüft am 2026-11-08):
 
 #### Projekte (Trainings-Repos) aktualisieren
 
-Grundsatz: **Der Schüler verliert nie etwas.** Hat er eine Übung verändert, wird vorher
-eine Sicherungskopie angelegt.
+Grundsatz: **Der Schüler verliert keine Übung.** Gesichert werden **nur die veränderten
+`.SUB`-Dateien** (Subapplikationen) – **nicht** der ganze Ordner. Die Sicherung liegt
+umbenannt **direkt neben dem Original im Projekt**, sodass der Schüler seine Version sofort
+in der IDE sieht:
+
+```
+test_AX/
+  Uebung1.SUB                               ← neuer Stand aus dem Schul-Repo
+  Uebung1_sicherung_20261108_153012.SUB     ← Version des Schülers (Typ umbenannt)
+```
 
 Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac_training1`.
 
-1. **Verändert?** `git status --porcelain` und lokale Commits, die nicht im Schul-Repo
-   sind (`git log origin/<ref>..HEAD`). Nichts verändert → direkt weiter mit Schritt 5,
-   keine Kopie.
-2. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
+1. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
    geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
-3. **Sicherung:** ganzen Repo-Ordner 1:1 kopieren, z. B. nach
-   `C:\ms\sl\prj\4diac_training1_sicherung_2026-11-08_153012\` (Zeitstempel mit
-   Sekunden; existiert der Ordner trotzdem, `_2`, `_3` … anhängen) – **mit** `.git`, **ohne**
-   `.metadata` (baut das Auto-Import-Plugin beim ersten Öffnen neu auf). In der Kopie die
-   Push-URL sperren wie bei `--new-project`. Die Kopie behält die Historie des Trainings,
-   `git diff` zeigt genau, was der Schüler verändert hat.
-4. **Verknüpfung** für die Sicherung, z. B. „4diac – Training 1 (Sicherung 08.11.2026 15:30)“.
-5. **Original aktualisieren:** `git fetch`, `git checkout -f <ref>` (falls der Schüler
-   auf einem anderen Branch oder im *detached HEAD* ist), `git reset --hard origin/<ref>`,
-   `git clean -fd` (ohne `-x`, damit ignorierte Dateien wie `.metadata` bleiben).
-6. **Bericht:** „Training 1 aktualisiert. Deine Änderungen liegen in: …“
+2. **Veränderte `.SUB` finden:** `git status --porcelain` → alle **versionierten**
+   `.SUB`-Dateien mit Änderungen (Groß-/Kleinschreibung der Endung egal). Zusätzlich
+   `.SUB`-Dateien, die sich durch lokale Commits vom Schul-Repo unterscheiden
+   (`git diff --name-only origin/<ref>...HEAD`).
+3. **Inhalt merken:** Diese Dateien in einen temporären Ordner unter
+   `C:\ms\sl\downloads\` kopieren (bevor Git sie überschreibt).
+4. **Original aktualisieren:** `git fetch`, `git checkout -f <ref>` (falls der Schüler auf
+   einem anderen Branch oder im *detached HEAD* ist), `git reset --hard origin/<ref>`.
+   **Kein `git clean`:** Neue Dateien, die der Schüler selbst angelegt hat (nicht
+   versioniert), bleiben unangetastet.
+5. **Sicherung zurückschreiben:** Jede gemerkte `.SUB` als
+   `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben und dabei den
+   **Typnamen in der Datei mit umbenennen** (`Name`-Attribut des Wurzelelements
+   `SubAppType`). Sonst gäbe es in 4diac zwei Typen mit demselben Namen. Existiert der
+   Dateiname schon, `_2`, `_3` … anhängen.
+6. **Bericht:** „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
+   test_AX/Uebung1_sicherung_20261108_153012.SUB …“
 
-Bewusst **nicht** in einen Klon von `_empty` kopieren: Die Kopie hätte dann die Historie
-von `_empty`, ein Vergleich zeigte alles als geändert. Die einfache Kopie ist leichter
-nachvollziehbar.
+Was **nicht** gesichert wird: Änderungen an anderen versionierten Dateien (z. B. `.sys`,
+`.fbt`, `.gcf`) werden beim Update verworfen – die Übungen stecken in den `.SUB`.
 
-❓ Sicherungen sammeln sich an (ca. 100 MB je Stück, unkritisch bei 250 GB SSD). Später
-evtl. `--cleanup` zum Löschen alter Sicherungen.
+Die Sicherungsdateien sind nicht versioniert. Beim nächsten `--update` werden Dateien
+`*_sicherung_*.SUB` daher nicht erneut gesichert, sondern einfach liegen gelassen.
 
 #### 4diac IDE aktualisieren
 
@@ -501,8 +508,8 @@ nächsten `install.cmd` aktualisiert:
       `4diac-ide` umbenennen.
 
    Bricht unterwegs etwas ab (z. B. Internet weg), bleibt die alte IDE funktionsfähig.
-3. **`.metadata` in allen Workspaces unter `C:\ms\sl\prj\` löschen** (auch in den
-   Sicherungen) – nur bei einem Versionswechsel. Damit gibt es keine Probleme mit
+3. **`.metadata` in allen Workspaces unter `C:\ms\sl\prj\` löschen** – nur bei einem
+   Versionswechsel. Damit gibt es keine Probleme mit
    veralteten Zwischenspeichern/Typindizes der alten Version. Verloren gehen nur
    IDE-weite Einstellungen (Window → Preferences) und das Fensterlayout; die Projekte
    holt das Auto-Import-Plugin beim nächsten Start zurück, projektspezifische
@@ -651,7 +658,7 @@ C:\ms\sl\
 
 - [ ] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5)
 - [ ] `--check` – nur prüfen, nichts verändern
-- [ ] `--update [<repo>]` – Trainings aktualisieren, vorher Sicherung bei Änderungen
+- [ ] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] ❓ Aktualisierung des Installers selbst
