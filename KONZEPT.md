@@ -111,38 +111,67 @@ Geht: Windows hat neben dem System-PATH (`HKLM`, braucht Admin) einen **Benutzer
 (`HKCU\Environment`), den jeder Benutzer selbst ändern darf. Windows hängt beide zusammen.
 
 ```powershell
-$add   = @('C:\ms\sl\tools\git\cmd', 'C:\ms\sl\tools\python', 'C:\ms\sl\tools\python\Scripts')
-$path  = [Environment]::GetEnvironmentVariable('Path', 'User')       # kann $null sein
-$parts = @($path -split ';' | Where-Object { $_.Trim() } | ForEach-Object { $_.TrimEnd('\') })
-foreach ($p in $add) { if ($parts -notcontains $p) { $parts += $p } }  # -notcontains: ohne Groß/klein
-[Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
-# SetEnvironmentVariable(..., 'User') sendet WM_SETTINGCHANGE selbst – kein eigener Win32-Aufruf nötig.
+$add = @('C:\ms\sl\tools\git\cmd', 'C:\ms\sl\tools\python', 'C:\ms\sl\tools\python\Scripts')
+
+# Rohwert lesen, OHNE %VARIABLEN% aufzulösen (GetEnvironmentVariable würde sie expandieren)
+$key   = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
+$raw   = $key.GetValue('Path', '', 'DoNotExpandEnvironmentNames')          # '' falls nicht vorhanden
+$parts = @($raw -split ';' | Where-Object { $_.Trim() } | ForEach-Object { $_.TrimEnd('\') })
+
+# Eigene Pfade VORANSTELLEN (vor den WindowsApps-Store-Alias), alte Vorkommen entfernen
+$rest  = @($parts | Where-Object { $add -notcontains $_ })                 # -notcontains: ohne Groß/klein
+$new   = ($add + $rest) -join ';'
+if ($new -ne $raw) {
+    $key.SetValue('Path', $new, [Microsoft.Win32.RegistryValueKind]::ExpandString)
+    # Direktes Registry-Schreiben benachrichtigt niemanden -> WM_SETTINGCHANGE selbst senden
+    Add-Type -Namespace Win32 -Name Native -MemberDefinition @'
+[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam,
+    string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
+'@
+    $r = [UIntPtr]::Zero
+    [void][Win32.Native]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$r)
+}
+$key.Close()
 ```
 
 Regeln:
 - **Nicht `setx` verwenden** – schneidet bei 1024 Zeichen ab und zerstört so den PATH.
-- Nur **eigene Einträge ergänzen/entfernen**, nie den ganzen PATH überschreiben
-  (idempotent: Eintrag nur hinzufügen, wenn noch nicht vorhanden).
-- Wirkt erst in **neu geöffneten** Terminals/Programmen; bereits offene Fenster sehen
-  die Änderung nicht. Der Installer stellt die eigenen Pfade zusätzlich im eigenen
-  Prozess **voran** (`$env:Path = "<eigene Pfade>;$env:Path"`), damit die folgenden
-  Schritte sofort und garantiert mit den eigenen Werkzeugen laufen.
+- **Nicht `[Environment]::Get/SetEnvironmentVariable(..., 'User')`** – liest den PATH
+  expandiert und schreibt ihn als `REG_SZ` zurück; Einträge wie
+  `%USERPROFILE%\AppData\Local\Microsoft\WindowsApps` würden dabei dauerhaft zu festen
+  Pfaden. Stattdessen Rohwert lesen und als `REG_EXPAND_SZ` (`ExpandString`) schreiben.
+- Eigene Einträge werden **vorangestellt**, nicht angehängt: Im Benutzer-PATH steht
+  standardmäßig `…\Microsoft\WindowsApps` mit einem `python.exe`-Alias, der nur den
+  Microsoft Store öffnet. Hinten angehängt würde in neuen Terminals dieser Alias gewinnen.
+- Nur **eigene Einträge ergänzen/entfernen**, alle übrigen bleiben unverändert
+  (idempotent: ein zweiter Lauf ändert nichts).
+- Wirkt erst in **neu geöffneten** Terminals/Programmen. Der Installer stellt die eigenen
+  Pfade zusätzlich im eigenen Prozess voran (`$env:Path = "<eigene Pfade>;$env:Path"`),
+  damit die folgenden Schritte sofort mit den eigenen Werkzeugen laufen.
 - `--uninstall` entfernt genau diese Einträge wieder.
-- Benutzer-PATH steht **hinter** dem System-PATH: Ist z. B. schon ein anderes Python
-  systemweit installiert, gewinnt dieses in neuen Terminals. Der Installer selbst ist
-  davon nicht betroffen (Pfade im eigenen Prozess vorangestellt). Am Ende prüft er mit
-  `Get-Command git, python`, welche Programme in einem neuen Terminal gefunden würden,
-  und **warnt im Abschlussbericht**, falls dort fremde Versionen gewinnen.
+- Der System-PATH steht trotzdem **vor** dem Benutzer-PATH: Ist z. B. schon ein anderes
+  Python systemweit installiert, gewinnt dieses in neuen Terminals. Am Ende prüft der
+  Installer mit `Get-Command git, python`, welche Programme in einem neuen Terminal
+  gefunden würden, und **warnt im Abschlussbericht**, falls dort fremde Versionen gewinnen.
 
 Ohne Admin machbar je Komponente:
 - **Git:** PortableGit (selbstentpackendes Archiv) nach `C:\ms\sl\tools\git`.
+  Danach `git config --system http.sslBackend schannel` (mit dem Git aus `C:\ms\sl`):
+  Git nutzt dann den Windows-Zertifikatsspeicher und funktioniert auch hinter Proxys mit
+  TLS-Prüfung. `--system` schreibt in die Konfiguration von PortableGit unter `C:\ms\sl`,
+  nicht ins Windows-System.
 - **Python:** offizieller Installer mit
-  `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0`
+  `/quiet InstallAllUsers=0 TargetDir=C:\ms\sl\tools\python PrependPath=0 Include_launcher=0 Include_shortcuts=0 Include_pip=1`
   (PATH setzen wir selbst, s. o.). Bewusst der **vollständige Installer** und nicht das
   „embeddable package“: Dieses enthält weder `pip` noch `venv`, beides wird in der
   Schulung gebraucht. Die benötigte Laufzeit (UCRT) ist seit Windows 10 Bestandteil
   von Windows.
 - **4diac IDE:** ZIP entpacken, braucht keinen PATH-Eintrag; Verknüpfung genügt.
+  Die ZIP enthält den Oberordner `4diac-ide\` → nach `C:\ms\sl\tools\` entpacken.
+  **Java ist enthalten:** eingebettetes JRE JustJ OpenJDK 25.0.4
+  (`plugins/org.eclipse.justj.openjdk.hotspot.jre.full.stripped.win32.x86_64_25.0.4…`),
+  keine separate Java-Installation nötig (geprüft am Milestone 2026-11-05_2214).
 
 ## 3. Architektur (Vorschlag)
 
@@ -151,8 +180,14 @@ Ohne Admin machbar je Komponente:
 Python soll installiert werden, kann also nicht Voraussetzung für den Installer sein.
 Daher zweistufig:
 
-1. **Bootstrap** – `install.ps1` (PowerShell, auf jedem Windows vorhanden)
+0. **Starter** – `install.cmd` (Doppelklick), ruft auf:
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"`
+   Nötig, weil Windows `.ps1`-Skripte standardmäßig blockiert (Ausführungsrichtlinie
+   `Restricted`/`RemoteSigned`, Internet-Markierung bei heruntergeladenen Dateien).
+   `-ExecutionPolicy Bypass` gilt nur für diesen einen Aufruf, keine Systemänderung.
+1. **Bootstrap** – `install.ps1` (Windows PowerShell 5.1, auf jedem Windows vorhanden)
    - prüft Umgebung, legt Basisverzeichnis an
+   - liest `manifest.json` mit `ConvertFrom-Json` (bordeigen, keine Zusatzmodule)
    - installiert Git und Python
 2. **Hauptinstaller** – Python-Skript (`trainings_installer/`)
    - liest Manifest, installiert restliche Komponenten, klont Repos, richtet Workspace ein
@@ -161,30 +196,40 @@ Daher zweistufig:
 
 ### 3.2 Manifest-getrieben
 
-Was installiert wird, steht **nicht im Code**, sondern in einer Konfigurationsdatei,
-z. B. `manifest.toml`:
+Was installiert wird, steht **nicht im Code**, sondern in `manifest.json`.
+**JSON statt TOML**, weil der Bootstrap in Windows PowerShell 5.1 läuft: Die kann JSON
+bordeigen lesen (`ConvertFrom-Json`), TOML nicht – und Python ist zu diesem Zeitpunkt
+noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json`.
 
-```toml
-[git]
-version = "2.47.0"
-url     = "https://github.com/git-for-windows/git/releases/download/..."
-sha256  = "..."
-
-[python]
-version = "3.12.7"
-url     = "https://www.python.org/ftp/python/..."
-sha256  = "..."
-
-[fordiac_ide]   # „fordiac“ = 4diac-interner Name (org.eclipse.fordiac); Schlüssel ohne führende Ziffer
-version = "3.4.0-milestone-2026-11-05_2214"
-url     = "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-release-history-milestone/releases/download/4diac-ide_3.4.0_milestone_2026-11-05_2214/4diac-ide_3.4.0-win32.win32.x86_64_milestone_2026-11-05_2214.zip"
-sha256  = "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9"
-
-[repos.training1]
-url    = "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git"
-ref    = "main"
-target = "workspace/training1"
+```json
+{
+  "git": {
+    "version": "2.47.0",
+    "url": "https://github.com/git-for-windows/git/releases/download/...",
+    "sha256": "..."
+  },
+  "python": {
+    "version": "3.12.7",
+    "url": "https://www.python.org/ftp/python/...",
+    "sha256": "..."
+  },
+  "fordiac_ide": {
+    "version": "3.4.0-milestone-2026-11-05_2214",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-ide-release-history-milestone/releases/download/4diac-ide_3.4.0_milestone_2026-11-05_2214/4diac-ide_3.4.0-win32.win32.x86_64_milestone_2026-11-05_2214.zip",
+    "sha256": "e6f821ddeb60cb06258292c76a80a36eaf456d6f31f7c679d899ca00b56269c9"
+  },
+  "repos": {
+    "training1": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
+      "ref": "main",
+      "target": "workspace/training1"
+    }
+  }
+}
 ```
+
+Schlüssel `fordiac_ide`: „fordiac“ ist der 4diac-interne Name (`org.eclipse.fordiac`)
+und vermeidet einen Schlüssel mit führender Ziffer.
 
 Vorteile: neue Schulung = neues Manifest; Versionen werden festgenagelt; Prüfsummen
 sichern die Downloads ab.
@@ -241,6 +286,6 @@ C:\ms\sl\
 7. Ein Manifest oder Profile pro Schulung?
 8. Verteilung an Teilnehmer: Einzeiler, ZIP, oder USB-Stick?
    Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
-   **nicht** verwendet. Falls Einzeiler, dann so, dass das Skript erst als Datei
-   gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
+   **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
+   Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
