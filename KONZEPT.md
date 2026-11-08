@@ -581,7 +581,9 @@ C:\ms\sl\
 
 1. Umgebungsprüfung (OS, Architektur, freier Speicher, Internet)
 2. Manifest laden (lokal oder ❓ von URL)
-3. Für jede Komponente: *bereits vorhanden?* → überspringen, sonst
+3. Für jede Komponente: *bereits in der Manifest-Version vorhanden?* → überspringen
+   (4diac IDE: Vergleich mit `.ms-sl-version`; bei abweichender Version Update nach 2.6
+   inkl. Löschen von `.metadata`), sonst
    herunterladen nach `downloads\<datei>.tmp` → SHA256 prüfen → erst bei Übereinstimmung
    umbenennen und installieren/entpacken (fehlerhafte Downloads werden verworfen);
    bei der 4diac IDE danach **`typelibrary` löschen** (Pflicht, siehe 2.1);
