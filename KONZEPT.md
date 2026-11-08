@@ -20,7 +20,7 @@ Installiert bzw. eingerichtet werden:
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
-| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample` … (siehe 2.5) | Branch/Tag ❓ |
+| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
 | weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
 
 ## 2. Rahmenbedingungen
@@ -294,6 +294,7 @@ geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace`
 | Training 1 | `C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace` |
 | Training 1 (leer) | `C:\ms\sl\prj\4diac_training1_empty\Ventilsteuerung\4diacIDE-workspace` |
 | Slurry Tanker | `C:\ms\sl\prj\4diac-SlurryTanker_AX-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Easy Example Counter | `C:\ms\sl\prj\4diac_EasyExampleCounter\Ventilsteuerung\4diacIDE-workspace` |
 | usw. | `C:\ms\sl\prj\<repo>\Ventilsteuerung\4diacIDE-workspace` |
 
 Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-Ordner.
@@ -302,6 +303,13 @@ Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-O
 > Der Workspace-`.metadata` entsteht beim ersten Start der IDE auf dem Teilnehmer-PC.
 > Einstellungen, die mitgeliefert werden sollen, gehören in die projektspezifischen
 > Einstellungen (Project Specific Settings) im Projekt.
+>
+> Achtung: `.gitignore` entfernt bereits versionierte Dateien **nicht**. Stand 2026-11-08
+> ist in `4diac_training1_empty` und `4diac-SlurryTanker_AX-sample` noch
+> `Ventilsteuerung/4diacIDE-workspace/.metadata/…` eingecheckt (aus der Zeit vor den
+> projektspezifischen Einstellungen). Dort einmalig `git rm -r --cached
+> Ventilsteuerung/4diacIDE-workspace/.metadata`, Einstellungen in die Projekte überführen,
+> `.gitignore` prüfen, committen.
 
 **Automatischer Import: Plugin `4diac-ide-autoimport`**
 
@@ -379,9 +387,16 @@ Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
 ❓ Offen:
 - Erlaubte Zeichen im Projektnamen (Vorschlag: Buchstaben, Ziffern, `-`, `_`; keine
   Leerzeichen und Umlaute, weil der Name Teil von Pfad und Verknüpfung ist).
-- Was passiert mit dem Git-Remote der Kopie? Vorschlag: `origin` → `upstream`
-  umbenennen, damit ein versehentliches `push` ins Schul-Repo nicht möglich ist und der
-  Schüler später ein eigenes Remote eintragen kann.
+- Was passiert mit dem Git-Remote der Kopie? Nur umbenennen (`origin` → `upstream`)
+  genügt **nicht**: Das Branch-Tracking bleibt erhalten, ein einfaches `git push` ginge
+  weiter ans Schul-Repo. Vorschlag: Fetch-URL behalten (Updates der Vorlage holen), aber
+  die Push-URL ungültig setzen, damit ein Push mit klarer Fehlermeldung scheitert:
+  ```
+  git remote rename origin upstream
+  git remote set-url --push upstream PUSH-DEAKTIVIERT
+  git branch --unset-upstream
+  ```
+  Der Schüler kann später ein eigenes Remote als `origin` eintragen.
 
 ## 3. Architektur (Vorschlag)
 
@@ -391,7 +406,9 @@ Python soll installiert werden, kann also nicht Voraussetzung für den Installer
 Daher zweistufig:
 
 0. **Starter** – `install.cmd` (Doppelklick), ruft auf:
-   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"`
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" %*`
+   (`%*` reicht alle Argumente wie `--new-project Maehwerk` an den Bootstrap weiter; der
+   Bootstrap gibt sie unverändert an den Python-Hauptinstaller weiter, der sie auswertet.)
    Nötig, weil Windows `.ps1`-Skripte standardmäßig blockiert (Ausführungsrichtlinie
    `Restricted`/`RemoteSigned`, Internet-Markierung bei heruntergeladenen Dateien).
    `-ExecutionPolicy Bypass` gilt nur für diesen einen Aufruf, keine Systemänderung.
@@ -454,6 +471,12 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
       "ref": "main",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
+    },
+    "4diac_EasyExampleCounter": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
+      "ref": "main",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Easy Example Counter"
     }
   }
 }
@@ -488,6 +511,7 @@ C:\ms\sl\
 │   │       └── 4diacIDE-workspace\   ← Workspace für Training 1 (-data)
 │   ├── 4diac_training1_empty\
 │   ├── 4diac-SlurryTanker_AX-sample\
+│   ├── 4diac_EasyExampleCounter\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── downloads\            ← Cache, ermöglicht Offline-Wiederholung
 └── install.log
@@ -537,4 +561,4 @@ C:\ms\sl\
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
    alles Weitere prüft der Installer per SHA256 aus dem Manifest).
 9. Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?
-10. `--new-project`: erlaubte Zeichen im Namen, Umgang mit dem Git-Remote (siehe 2.5).
+10. `--new-project`: erlaubte Zeichen im Namen, Push-Sperre über ungültige Push-URL (siehe 2.5).
