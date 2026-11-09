@@ -418,11 +418,15 @@ Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) auf dem Desktop des B
 – keine Admin-Rechte nötig.
 
 **Keine doppelten Verknüpfungen.** Jede Verknüpfung hat einen festen Dateinamen (z. B.
-`4diac – Training 1.lnk`). Existiert sie schon, wird sie **überschrieben**, nicht
-daneben neu angelegt – ein zweiter Lauf von `install.cmd` ändert also nichts. Der
-Installer führt eine Liste aller angelegten Verknüpfungen in `C:\ms\sl\shortcuts.json`;
-daraus entfernt er Verknüpfungen zu Trainings, die es nicht mehr gibt, und
-`--uninstall` löscht genau diese Verknüpfungen wieder (keine fremden). Durch
+`4diac – Training 1.lnk`). Der Installer führt eine Liste aller angelegten
+Verknüpfungen in `C:\ms\sl\shortcuts.json`. Existiert eine Verknüpfung schon **und
+steht sie in dieser Liste**, wird sie **überschrieben**, nicht daneben neu angelegt – ein
+zweiter Lauf von `install.cmd` ändert also nichts. Eine **fremde** Verknüpfung gleichen
+Namens (z. B. ein „4diac IDE.lnk“ einer privat installierten IDE) bleibt unangetastet;
+der Installer nimmt dann einen anderen festen Namen mit dem Zusatz „(Schule)“, z. B.
+„4diac IDE (Schule).lnk“, und merkt sich diesen in der Liste. Aus der Liste entfernt er
+Verknüpfungen zu Trainings, die es nicht mehr gibt, und `--uninstall` löscht genau
+diese Verknüpfungen wieder (keine fremden). Durch
 `-data` öffnet jede **Trainings**-Verknüpfung direkt den richtigen Workspace, ohne
 Workspace-Auswahl; nur die allgemeine „4diac IDE“ zeigt bewusst die Auswahl.
 
@@ -496,6 +500,10 @@ unsichtbares Netz für alles, was die `.SUB`-Kopie nicht abdeckt (geänderte `.f
 `.gcf`, gelöschte Übungen, lokale Commits). Der Schüler sieht davon nichts; der Lehrer
 holt im Notfall jede Datei zurück:
 `git checkout sicherung_20261108_153012 -- test_AX\MeinBaustein.fbt`.
+Eine vom Schüler **gelöschte** Datei steht im Sicherungs-Commit nicht mehr drin; sie
+kommt aus dem letzten Commit, der sie noch enthält:
+`git log -1 --format=%H sicherung_20261108_153012 -- test_AX\Uebung2.SUB` liefert den
+Commit, der sie gelöscht hat, dann `git checkout <commit>^ -- test_AX\Uebung2.SUB`.
 
 1. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
    geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
@@ -510,11 +518,16 @@ holt im Notfall jede Datei zurück:
    damit ebenfalls erreichbar. Ist `HEAD` = ZIEL und nichts geändert, entfällt der Branch
    (keine leeren Sicherungen). Autor per `-c user.name=TrainingsInstaller
    -c user.email=installer@ms-sl.invalid`, falls Git noch keine Identität hat.
-4. **Veränderte `.SUB` finden:** `git diff --name-only --no-renames --diff-filter=AM
+4. **Veränderte `.SUB` finden:** `git diff --name-status --no-renames
    ZIEL...<sicherung>` – nur Dateien, die **der Schüler** gegenüber dem gemeinsamen Stand
-   verändert oder neu committet hat (Änderungen nur auf Schulseite zählen nicht),
-   Endung `.SUB`/`.sub`. Gelöschte `.SUB` werden nicht kopiert (es gibt nichts zu
-   kopieren), stehen aber im Bericht mit Verweis auf den Sicherungs-Branch.
+   verändert, neu committet oder gelöscht hat (Änderungen nur auf Schulseite zählen
+   nicht), Endung `.SUB`/`.sub`. Status `A`/`M` → wird in Schritt 5 gesichert. Status `D`
+   (gelöscht) → nicht kopiert (es gibt nichts zu kopieren), aber im Bericht genannt; der
+   Lehrer holt sie bei Bedarf aus dem Commit davor (siehe oben).
+   Ist der Schüler auf einem anderen Branch als `<ref>` und gibt es den lokalen Branch
+   `<ref>` mit Commits, die weder in der Sicherung noch in ZIEL stecken, wird auch dessen
+   Stand gesichert: `git branch sicherung_<JJJJMMTT>_<hhmmss>_<ref> <ref>` – Schritt 7
+   setzt `<ref>` sonst zurück.
 5. **Sicherung schreiben – vor dem Zurücksetzen:** Jede gefundene `.SUB` als
    `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben (Endung in
    der Schreibweise des Originals) und dabei **in der Datei den Typnamen mit
@@ -529,16 +542,25 @@ holt im Notfall jede Datei zurück:
    Verweist eine gesicherte `.SUB` auf eine andere, ebenfalls gesicherte `.SUB`, zeigt
    der Verweis weiter auf das Original → **Warnung** im Bericht (selten; wird nicht
    automatisch umgeschrieben).
-6. **Unversionierte Dateien im Weg:** Bringt ZIEL eine Datei an einem Pfad mit, an dem
-   der Schüler eine eigene, unversionierte Datei hat
-   (`git ls-files --others --exclude-standard` ∩ `git ls-tree -r --name-only ZIEL`),
-   würde Git sie überschreiben. Solche Dateien werden vorher ebenso zu
-   `…_sicherung_<JJJJMMTT>_<hhmmss>.<Endung>` umbenannt (bei `.SUB` mit Typnamen).
-7. **Original aktualisieren:** Branch → `git checkout -f -B <ref> ZIEL`, Tag →
-   `git checkout -f --detach ZIEL` (beides auch, wenn der Schüler auf einem anderen
-   Branch oder im *detached HEAD* war). **Kein `git clean`:** Neue Dateien, die der
-   Schüler selbst angelegt hat, bleiben unangetastet.
-8. **Bericht:** „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
+6. **Eigene Änderungen verwerfen:** `git reset --hard` (auf den aktuellen `HEAD`) – die
+   Änderungen an versionierten Dateien stecken ja im Sicherungs-Branch. Unversionierte
+   Dateien bleiben dabei liegen.
+7. **Original aktualisieren – ohne `-f`:** Branch → `git checkout -B <ref> ZIEL`, Tag →
+   `git checkout --detach ZIEL` (beides auch, wenn der Schüler auf einem anderen Branch
+   oder im *detached HEAD* war). Ohne `-f` **bricht Git ab**, wenn eine eigene,
+   unversionierte Datei des Schülers im Weg wäre – auch wenn eine Datei dort liegt, wo
+   ZIEL einen Ordner anlegt, oder umgekehrt – und nennt die betroffenen Pfade. Der
+   Installer benennt genau diese zu `…_sicherung_<JJJJMMTT>_<hhmmss>.<Endung>` um (bei
+   `.SUB` mit Typnamen wie in Schritt 5) und versucht es erneut; klappt es dann noch
+   nicht → Abbruch mit Meldung, nichts weiter verändert.
+   **Kein `git clean`:** Neue Dateien, die der Schüler selbst angelegt hat, bleiben
+   unangetastet.
+   Grenze: Dateien, die per `.gitignore` ausgeschlossen sind (z. B. `.metadata`), behandelt
+   Git als entbehrlich und überschreibt sie ohne Abbruch, falls ZIEL denselben Pfad
+   mitbringt. Das Schul-Repo bringt solche Pfade nie mit (`.metadata` ist nie
+   versioniert, siehe 2.5); daher kein eigener Schutz.
+8. **Bericht** (auch: gelöschte `.SUB`, umbenannte Dateien im Weg, Warnungen):
+   „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
    test_AX/Uebung1_sicherung_20261108_153012.SUB … Vollständige Sicherung:
    Branch sicherung_20261108_153012.“
 
