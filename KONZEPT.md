@@ -374,15 +374,23 @@ Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
   in `C:\ms\sl\tools\4diac-ide\configuration\.settings\org.eclipse.ui.ide.prefs`:
   ```ini
   eclipse.preferences.version=1
-  MAX_RECENT_WORKSPACES=10
+  MAX_RECENT_WORKSPACES=<Anzahl Einträge, mindestens 10>
   RECENT_WORKSPACES=C\:\\ms\\sl\\prj\\4diac_training1\\Ventilsteuerung\\4diacIDE-workspace\nC\:\\ms\\sl\\prj\\...
   RECENT_WORKSPACES_PROTOCOL=3
   SHOW_RECENT_WORKSPACES=true
   SHOW_WORKSPACE_SELECTION_DIALOG=true
   ```
   (Einträge durch `\n` getrennt, `\` und `:` escaped; der erste Eintrag ist vorausgewählt.)
+  `MAX_RECENT_WORKSPACES` = Anzahl der Workspaces, damit auch bei vielen eigenen Projekten
+  keiner aus der Liste fällt. Eclipse nimmt größere Werte an, 10 ist nur das Minimum
+  (`ChooseWorkspaceData`: `Math.max(max, RECENT_MAX_LENGTH)`).
   Geprüft am 2026-11-08: Die Auswahl zeigt die vorbelegten Workspaces als anklickbare Liste.
-- Bei jedem `--update`/`--new-project` wird die Liste neu geschrieben.
+- Die Liste wird neu geschrieben bei jedem `install.cmd`, `--update`, `--new-project`
+  **und nach einem IDE-Update** – die Datei liegt in `tools\4diac-ide\configuration\` und
+  verschwindet beim Tausch des IDE-Ordners (siehe 2.6).
+- Geschrieben wird nur, wenn **keine** IDE aus `C:\ms\sl\tools\` läuft. Eine laufende IDE
+  hat die alte Liste im Speicher und würde sie beim Beenden zurückschreiben. Läuft eine,
+  holt der nächste Lauf von `install.cmd` das Schreiben nach (Hinweis an den Schüler).
 - „Ausführen in“ der Verknüpfung: **`C:\ms\sl\prj`**. Grund (geprüft am 2026-11-08): Ist
   die Liste leer, schlägt die Auswahl `<Ausführen in>\workspace` vor – ein
   `-Dosgi.instance.area.default` in `4diac-ide.ini` wird dabei ignoriert. So bleibt auch
@@ -391,6 +399,10 @@ Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
 > **Regel: Es entsteht nie ein Workspace außerhalb von `C:\ms\sl`.** Jede Verknüpfung
 > startet entweder mit festem `-data` unter `C:\ms\sl\prj\` oder mit der vorbelegten
 > Workspace-Auswahl.
+>
+> Grenze: Die Workspace-Auswahl selbst lässt sich nicht sperren – wer dort bewusst einen
+> anderen Pfad eintippt oder per „Browse…“ wählt, bekommt ihn. Vorbelegung und
+> „Ausführen in“ sorgen dafür, dass das nicht versehentlich passiert.
 
 Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 
@@ -411,7 +423,8 @@ daneben neu angelegt – ein zweiter Lauf von `install.cmd` ändert also nichts.
 Installer führt eine Liste aller angelegten Verknüpfungen in `C:\ms\sl\shortcuts.json`;
 daraus entfernt er Verknüpfungen zu Trainings, die es nicht mehr gibt, und
 `--uninstall` löscht genau diese Verknüpfungen wieder (keine fremden). Durch
-`-data` öffnet jede Verknüpfung direkt den richtigen Workspace, ohne Workspace-Auswahl.
+`-data` öffnet jede **Trainings**-Verknüpfung direkt den richtigen Workspace, ohne
+Workspace-Auswahl; nur die allgemeine „4diac IDE“ zeigt bewusst die Auswahl.
 
 **Neues Projekt anlegen (zweites Empty).** Will ein Schüler ein weiteres eigenes Projekt
 beginnen, legt der Installer eine neue Kopie von `4diac_training1_empty` an:
@@ -478,34 +491,66 @@ test_AX/
 
 Aufruf: `install.cmd --update` (alle Trainings) bzw. `install.cmd --update 4diac_training1`.
 
+Zusätzlich legt jedes Update vor dem Zurücksetzen einen **Sicherungs-Branch** an – ein
+unsichtbares Netz für alles, was die `.SUB`-Kopie nicht abdeckt (geänderte `.fbt`, `.sys`,
+`.gcf`, gelöschte Übungen, lokale Commits). Der Schüler sieht davon nichts; der Lehrer
+holt im Notfall jede Datei zurück:
+`git checkout sicherung_20261108_153012 -- test_AX\MeinBaustein.fbt`.
+
 1. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
    geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
-2. **Veränderte `.SUB` finden:** `git status --porcelain` → alle **versionierten**
-   `.SUB`-Dateien mit Änderungen (Groß-/Kleinschreibung der Endung egal). Zusätzlich
-   `.SUB`-Dateien, die sich durch lokale Commits vom Schul-Repo unterscheiden
-   (`git diff --name-only origin/<ref>...HEAD`).
-3. **Inhalt merken:** Diese Dateien in einen temporären Ordner unter
-   `C:\ms\sl\downloads\` kopieren (bevor Git sie überschreibt).
-4. **Original aktualisieren:** `git fetch`, `git checkout -f <ref>` (falls der Schüler auf
-   einem anderen Branch oder im *detached HEAD* ist), `git reset --hard origin/<ref>`.
-   **Kein `git clean`:** Neue Dateien, die der Schüler selbst angelegt hat (nicht
-   versioniert), bleiben unangetastet.
-5. **Sicherung zurückschreiben:** Jede gemerkte `.SUB` als
+2. **Zuerst holen:** `git fetch --tags origin` – ändert nichts an den Dateien des
+   Schülers. Dann `<ref>` aus dem Manifest auf einen Commit auflösen: Branch →
+   `origin/<ref>`, sonst Tag → `refs/tags/<ref>` (`git rev-parse --verify …^{commit}`).
+   Ergebnis = **ZIEL**. Nicht auflösbar → Abbruch, nichts verändert.
+3. **Sicherungs-Branch:** `git stash create` erzeugt einen Commit mit allen Änderungen an
+   versionierten Dateien (inkl. Löschungen), **ohne** Arbeitsverzeichnis oder Index
+   anzufassen; ohne Änderungen gilt `HEAD`. Darauf
+   `git branch sicherung_<JJJJMMTT>_<hhmmss> <commit>`. Lokale Commits des Schülers sind
+   damit ebenfalls erreichbar. Ist `HEAD` = ZIEL und nichts geändert, entfällt der Branch
+   (keine leeren Sicherungen). Autor per `-c user.name=TrainingsInstaller
+   -c user.email=installer@ms-sl.invalid`, falls Git noch keine Identität hat.
+4. **Veränderte `.SUB` finden:** `git diff --name-only --no-renames --diff-filter=AM
+   ZIEL...<sicherung>` – nur Dateien, die **der Schüler** gegenüber dem gemeinsamen Stand
+   verändert oder neu committet hat (Änderungen nur auf Schulseite zählen nicht),
+   Endung `.SUB`/`.sub`. Gelöschte `.SUB` werden nicht kopiert (es gibt nichts zu
+   kopieren), stehen aber im Bericht mit Verweis auf den Sicherungs-Branch.
+5. **Sicherung schreiben – vor dem Zurücksetzen:** Jede gefundene `.SUB` als
    `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben (Endung in
-   der Schreibweise des Originals, `.SUB` oder `.sub`) und dabei **in der Datei den
-   Typnamen mit umbenennen**: `Name`-Attribut des Wurzelelements
-   `<SubAppType Name="…">` = neuer Dateiname ohne Endung. Sonst gäbe es in 4diac zwei
-   Typen mit demselben Namen. Geprüft an `ChainOfActionsDemo.sub` aus Training 1: Der
-   Typname steht nur dort, keine andere Datei verweist darauf. Existiert der Dateiname
-   schon, `_2`, `_3` … anhängen.
-6. **Bericht:** „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
-   test_AX/Uebung1_sicherung_20261108_153012.SUB …“
+   der Schreibweise des Originals) und dabei **in der Datei den Typnamen mit
+   umbenennen**: `Name`-Attribut des Wurzelelements `<SubAppType Name="…">` = neuer
+   Dateiname ohne Endung, sonst gäbe es in 4diac zwei Typen mit demselben Namen. Nur
+   dieses Attribut wird ersetzt, Kodierung und Formatierung bleiben unverändert. Geprüft
+   an `ChainOfActionsDemo.sub` aus Training 1: Der Typname steht nur dort. Existiert der
+   Dateiname schon, `_2`, `_3` … anhängen.
+   Die Sicherungen sind **nicht versioniert**, daher lässt `git reset --hard` sie liegen.
+   Bricht das Update danach ab, ist nichts verloren – kein Zwischenordner in
+   `downloads\` nötig.
+   Verweist eine gesicherte `.SUB` auf eine andere, ebenfalls gesicherte `.SUB`, zeigt
+   der Verweis weiter auf das Original → **Warnung** im Bericht (selten; wird nicht
+   automatisch umgeschrieben).
+6. **Unversionierte Dateien im Weg:** Bringt ZIEL eine Datei an einem Pfad mit, an dem
+   der Schüler eine eigene, unversionierte Datei hat
+   (`git ls-files --others --exclude-standard` ∩ `git ls-tree -r --name-only ZIEL`),
+   würde Git sie überschreiben. Solche Dateien werden vorher ebenso zu
+   `…_sicherung_<JJJJMMTT>_<hhmmss>.<Endung>` umbenannt (bei `.SUB` mit Typnamen).
+7. **Original aktualisieren:** Branch → `git checkout -f -B <ref> ZIEL`, Tag →
+   `git checkout -f --detach ZIEL` (beides auch, wenn der Schüler auf einem anderen
+   Branch oder im *detached HEAD* war). **Kein `git clean`:** Neue Dateien, die der
+   Schüler selbst angelegt hat, bleiben unangetastet.
+8. **Bericht:** „Training 1 aktualisiert. Deine geänderten Übungen wurden gesichert:
+   test_AX/Uebung1_sicherung_20261108_153012.SUB … Vollständige Sicherung:
+   Branch sicherung_20261108_153012.“
 
-Was **nicht** gesichert wird: Änderungen an anderen versionierten Dateien (z. B. `.sys`,
-`.fbt`, `.gcf`) werden beim Update verworfen – die Übungen stecken in den `.SUB`.
+Sichtbar gesichert werden nur die `.SUB`. Änderungen an anderen versionierten Dateien
+(z. B. `.sys`, `.fbt`, `.gcf`) verschwinden aus dem Projekt, sind aber über den
+Sicherungs-Branch wiederherstellbar.
 
 Die Sicherungsdateien sind nicht versioniert. Beim nächsten `--update` werden Dateien
 `*_sicherung_*.SUB` daher nicht erneut gesichert, sondern einfach liegen gelassen.
+
+❓ Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbedarf).
+Später evtl. `--cleanup`, das alte löscht.
 
 #### 4diac IDE aktualisieren
 
@@ -523,7 +568,10 @@ nächsten `install.cmd` aktualisiert:
    3. dort **`typelibrary` löschen** (Pflicht, siehe 2.1), Auto-Import-Plugin nach
       `dropins\` kopieren, `ms-sl-customization.ini` und `.ms-sl-version` schreiben,
    4. erst wenn alles geklappt hat: `tools\4diac-ide` löschen und `4diac-ide.neu` in
-      `4diac-ide` umbenennen.
+      `4diac-ide` umbenennen,
+   5. Workspace-Liste für die allgemeine „4diac IDE“ neu schreiben
+      (`configuration\.settings\org.eclipse.ui.ide.prefs`, siehe 2.5) – sie lag im
+      alten Ordner.
 
    Bricht unterwegs etwas ab (z. B. Internet weg), bleibt die alte IDE funktionsfähig.
 3. **`.metadata` in allen Workspaces unter `C:\ms\sl\prj\` löschen** – nur bei einem
