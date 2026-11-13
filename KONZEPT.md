@@ -19,7 +19,7 @@ Installiert bzw. eingerichtet werden:
 | Python         | Hilfsskripte, Generatoren                     | **3.15.2** – festgedübelt (siehe 2.4) |
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
-| 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
+| 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
 | weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
 
@@ -763,7 +763,7 @@ C:\ms\sl\
 3. ~~Offline-Betrieb nötig?~~ → Installation online; danach muss alles offline laufen.
 4. Eigene Downloads (portable) oder `winget`/Chocolatey/Scoop?
 5. ~~Welche 4diac-IDE-Version?~~ → 3.4.0 Milestone 2026-11-05_2214. Bezug über
-   GitHub Release (siehe 2.1). Offen: wird FORTE benötigt?
+   GitHub Release (siehe 2.1). FORTE wird **nicht** installiert (entschieden 2026-11-13).
 6. Welche „weiteren“ Komponenten?
 7. Ein Manifest oder Profile pro Schulung?
 8. Verteilung an Teilnehmer: Einzeiler, ZIP, oder USB-Stick?
