@@ -21,7 +21,7 @@ Installiert bzw. eingerichtet werden:
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
-| weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
+| weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber) | **nein** |
 
 ## 2. Rahmenbedingungen
 
@@ -764,7 +764,7 @@ C:\ms\sl\
 4. Eigene Downloads (portable) oder `winget`/Chocolatey/Scoop?
 5. ~~Welche 4diac-IDE-Version?~~ → 3.4.0 Milestone 2026-11-05_2214. Bezug über
    GitHub Release (siehe 2.1). FORTE wird **nicht** installiert (entschieden 2026-11-13).
-6. Welche „weiteren“ Komponenten?
+6. ~~Welche „weiteren“ Komponenten?~~ → **keine** (entschieden 2026-11-13).
 7. Ein Manifest oder Profile pro Schulung?
 8. Verteilung an Teilnehmer: Einzeiler, ZIP, oder USB-Stick?
    Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
