@@ -21,7 +21,7 @@ Installiert bzw. eingerichtet werden:
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
-| weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber) | **nein** |
+| weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
 ## 2. Rahmenbedingungen
 
@@ -754,7 +754,9 @@ C:\ms\sl\
 ## 6. Nicht-Ziele
 
 - Kein allgemeiner Paketmanager
-- ❓ Keine Installation von Treibern/Hardware-Tools mit Admin-Pflicht
+- Keine Installation von Treibern/Hardware-Tools (auch keine mit Admin-Pflicht)
+- **ISO-Designer** (Jetter, ISOBUS-VT-Pools) wird **nicht** installiert – den lädt jeder
+  Teilnehmer selbst herunter.
 
 ## 7. Offene Fragen (Zusammenfassung)
 
