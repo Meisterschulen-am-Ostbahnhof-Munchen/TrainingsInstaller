@@ -20,7 +20,7 @@ Installiert bzw. eingerichtet werden:
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
-| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
+| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
 | weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
 ## 2. Rahmenbedingungen
@@ -444,7 +444,8 @@ install.cmd --new-project Maehwerk
    Existiert `C:\ms\sl\prj\<Name>` schon → Abbruch, nichts überschreiben.
    `Neues Projekt.cmd` übergibt den eingegebenen Namen nur an den Installer und prüft
    ihn dort, nicht selbst in `cmd`.
-1. `4diac_training1_empty` nach `C:\ms\sl\prj\Maehwerk\` klonen.
+1. `4diac_training1_empty` mit dem Tag aus dem Manifest nach `C:\ms\sl\prj\Maehwerk\`
+   klonen, Arbeits-Branch `arbeit` anlegen.
 2. Verknüpfung „4diac – Maehwerk“ anlegen (Workspace
    `C:\ms\sl\prj\Maehwerk\Ventilsteuerung\4diacIDE-workspace`).
 3. Beim ersten Start importiert das Plugin die Projekte automatisch.
@@ -508,9 +509,10 @@ Commit, der sie gelöscht hat, dann `git checkout <commit>^ -- test_AX\Uebung2.S
 1. **IDE geschlossen?** Prüfung wie in 2.5 („IDE geöffnet?“); ist der Workspace noch
    geöffnet, Abbruch mit Hinweis „Bitte 4diac IDE schließen“.
 2. **Zuerst holen:** `git fetch --tags origin` – ändert nichts an den Dateien des
-   Schülers. Dann `<ref>` aus dem Manifest auf einen Commit auflösen: Branch →
-   `origin/<ref>`, sonst Tag → `refs/tags/<ref>` (`git rev-parse --verify …^{commit}`).
-   Ergebnis = **ZIEL**. Nicht auflösbar → Abbruch, nichts verändert.
+   Schülers. Dann den Tag `<ref>` aus dem Manifest auf einen Commit auflösen
+   (`git rev-parse --verify refs/tags/<ref>^{commit}`). Ergebnis = **ZIEL**. Nicht
+   auflösbar → Abbruch, nichts verändert. (Steht im Manifest ausnahmsweise ein Branch,
+   gilt `origin/<ref>`.)
 3. **Sicherungs-Branch:** `git stash create` erzeugt einen Commit mit allen Änderungen an
    versionierten Dateien (inkl. Löschungen), **ohne** Arbeitsverzeichnis oder Index
    anzufassen; ohne Änderungen gilt `HEAD`. Darauf
@@ -524,10 +526,10 @@ Commit, der sie gelöscht hat, dann `git checkout <commit>^ -- test_AX\Uebung2.S
    nicht), Endung `.SUB`/`.sub`. Status `A`/`M` → wird in Schritt 5 gesichert. Status `D`
    (gelöscht) → nicht kopiert (es gibt nichts zu kopieren), aber im Bericht genannt; der
    Lehrer holt sie bei Bedarf aus dem Commit davor (siehe oben).
-   Ist der Schüler auf einem anderen Branch als `<ref>` und gibt es den lokalen Branch
-   `<ref>` mit Commits, die weder in der Sicherung noch in ZIEL stecken, wird auch dessen
-   Stand gesichert: `git branch sicherung_<JJJJMMTT>_<hhmmss>_<ref> <ref>` – Schritt 7
-   setzt `<ref>` sonst zurück.
+   Ist der Schüler auf einem anderen Branch als `arbeit` und hat der lokale Branch
+   `arbeit` Commits, die weder in der Sicherung noch in ZIEL stecken, wird auch dessen
+   Stand gesichert: `git branch sicherung_<JJJJMMTT>_<hhmmss>_arbeit arbeit` – Schritt 7
+   setzt `arbeit` sonst zurück.
 5. **Sicherung schreiben – vor dem Zurücksetzen:** Jede gefundene `.SUB` als
    `<Name>_sicherung_<JJJJMMTT>_<hhmmss>.SUB` in denselben Ordner schreiben (Endung in
    der Schreibweise des Originals) und dabei **in der Datei den Typnamen mit
@@ -545,9 +547,9 @@ Commit, der sie gelöscht hat, dann `git checkout <commit>^ -- test_AX\Uebung2.S
 6. **Eigene Änderungen verwerfen:** `git reset --hard` (auf den aktuellen `HEAD`) – die
    Änderungen an versionierten Dateien stecken ja im Sicherungs-Branch. Unversionierte
    Dateien bleiben dabei liegen.
-7. **Original aktualisieren – ohne `-f`:** Branch → `git checkout -B <ref> ZIEL`, Tag →
-   `git checkout --detach ZIEL` (beides auch, wenn der Schüler auf einem anderen Branch
-   oder im *detached HEAD* war). Ohne `-f` **bricht Git ab**, wenn eine eigene,
+7. **Original aktualisieren – ohne `-f`:** `git checkout -B arbeit ZIEL` (auch wenn der
+   Schüler auf einem anderen Branch oder im *detached HEAD* war; der Arbeits-Branch steht
+   danach auf dem neuen Tag). Ohne `-f` **bricht Git ab**, wenn eine eigene,
    unversionierte Datei des Schülers im Weg wäre – auch wenn eine Datei dort liegt, wo
    ZIEL einen Ordner anlegt, oder umgekehrt – und nennt die betroffenen Pfade. Der
    Installer benennt genau diese zu `…_sicherung_<JJJJMMTT>_<hhmmss>.<Endung>` um (bei
@@ -663,26 +665,26 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
   "repos": {
     "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
-      "ref": "main",
+      "ref": "v0.28j",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1"
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
-      "ref": "main",
+      "ref": "v0.28j",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1 (leer)",
       "template_for_new_projects": true
     },
     "4diac-SlurryTanker_AX-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
-      "ref": "main",
+      "ref": "<neuer Tag nach .metadata-Bereinigung>",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
-      "ref": "main",
+      "ref": "v1.12",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Easy Example Counter"
     }
@@ -694,6 +696,14 @@ Schlüssel `fordiac_ide`: „fordiac“ ist der 4diac-interne Name (`org.eclipse
 und vermeidet einen Schlüssel mit führender Ziffer.
 
 `repos`: Der Schlüssel ist der Repo-Name und zugleich der Ordner unter `C:\ms\sl\prj\`.
+`ref` ist ein **Tag** (festgedübelt wie IDE, Git und Python): Jeder Schüler bekommt genau
+den freigegebenen Stand, nie einen halbfertigen `main`. Neuer Stand = neuen Tag im
+Manifest eintragen. Geklont wird mit `git clone --branch <tag>`; danach legt der
+Installer den lokalen Arbeits-Branch **`arbeit`** an (`git switch -c arbeit`), damit
+Commits des Schülers (z. B. per EGit) nicht auf einem *detached HEAD* landen.
+`4diac_training1` und `4diac_training1_empty` bekommen immer **denselben** Tag (beide
+werden gemeinsam released). `4diac-SlurryTanker_AX-sample` hat noch keinen passenden Tag
+(`main` ist nicht getaggt, eingecheckter `.metadata`) – neuer Tag nach der Bereinigung.
 `workspace` ist relativ zum Repo-Ordner, `shortcut` der Name der Verknüpfung.
 `template_for_new_projects` markiert das Repo, das `--new-project` kopiert.
 
@@ -762,23 +772,21 @@ C:\ms\sl\
 
 ### Offen
 
-1. **Branch oder Tag pro Trainings-Repo?** Im Manifest steht überall `main`. Ein Tag
-   (z. B. `v0.28f`) wäre festgedübelt; `--update` kann mit Tags umgehen (siehe 2.6).
-2. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
-3. **Verteilung an Teilnehmer:** Einzeiler, ZIP oder USB-Stick?
+1. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
+2. **Verteilung an Teilnehmer:** Einzeiler, ZIP oder USB-Stick?
    Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
    **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet
    wird (Quelle: GitHub Release des Installers per HTTPS, alles Weitere prüft der
    Installer per SHA256 aus dem Manifest).
-4. **Python + PowerShell oder nur PowerShell?** Bzw. eigene Downloads (portable) oder
+3. **Python + PowerShell oder nur PowerShell?** Bzw. eigene Downloads (portable) oder
    `winget`/Chocolatey/Scoop? (siehe 3.1)
-5. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
-6. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
-7. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+4. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
+5. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
+6. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
    Namensprüfung ist festgelegt)
-8. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
-9. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
+7. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
+8. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
    und alte Sicherungs-Branches? (siehe 2.6)
 
 ### Entschieden
@@ -788,6 +796,8 @@ C:\ms\sl\
 - **Offline:** Installation online; danach muss alles offline laufen.
 - **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
 - **4diac FORTE:** wird **nicht** installiert (2026-11-13).
+- **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
+  (2026-11-17, siehe 3.2).
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
   ISO-Designer lädt jeder selbst (2026-11-13, siehe 6).
 - **Verknüpfungen:** Desktop **unbedingt** (plus Startmenü): „4diac Projekte“
