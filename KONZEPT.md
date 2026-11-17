@@ -19,9 +19,9 @@ Installiert bzw. eingerichtet werden:
 | Python         | Hilfsskripte, Generatoren                     | **3.15.2** – festgedübelt (siehe 2.4) |
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
-| 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | ❓ nötig?        |
+| 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | Branch/Tag ❓ |
-| weitere …      | ❓ (z. B. VS Code, Wireshark, CAN-Treiber)    |                  |
+| weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
 ## 2. Rahmenbedingungen
 
@@ -754,25 +754,42 @@ C:\ms\sl\
 ## 6. Nicht-Ziele
 
 - Kein allgemeiner Paketmanager
-- ❓ Keine Installation von Treibern/Hardware-Tools mit Admin-Pflicht
+- Keine Installation von Treibern/Hardware-Tools (auch keine mit Admin-Pflicht)
+- **ISO-Designer** (Jetter, ISOBUS-VT-Pools) wird **nicht** installiert – den lädt jeder
+  Teilnehmer selbst herunter.
 
-## 7. Offene Fragen (Zusammenfassung)
+## 7. Offene Fragen und Entscheidungen
 
-1. ~~Welche Plattformen außer Windows?~~ → **Windows only** (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
-2. ~~Admin-Rechte verfügbar oder nicht?~~ → Ohne Admin; PATH über Benutzer-PATH (2.2).
-3. ~~Offline-Betrieb nötig?~~ → Installation online; danach muss alles offline laufen.
-4. Eigene Downloads (portable) oder `winget`/Chocolatey/Scoop?
-5. ~~Welche 4diac-IDE-Version?~~ → 3.4.0 Milestone 2026-11-05_2214. Bezug über
-   GitHub Release (siehe 2.1). Offen: wird FORTE benötigt?
-6. Welche „weiteren“ Komponenten?
-7. Ein Manifest oder Profile pro Schulung?
-8. Verteilung an Teilnehmer: Einzeiler, ZIP, oder USB-Stick?
+### Offen
+
+1. **Branch oder Tag pro Trainings-Repo?** Im Manifest steht überall `main`. Ein Tag
+   (z. B. `v0.28f`) wäre festgedübelt; `--update` kann mit Tags umgehen (siehe 2.6).
+2. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
+3. **Verteilung an Teilnehmer:** Einzeiler, ZIP oder USB-Stick?
    Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
    **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
-   Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet wird (Quelle: GitHub Release des Installers per HTTPS,
-   alles Weitere prüft der Installer per SHA256 aus dem Manifest).
-9. ~~Verknüpfungen nur im Startmenü oder zusätzlich auf dem Desktop?~~ → **Desktop
-   unbedingt** (plus Startmenü): „4diac Projekte“ (`C:\ms\sl\prj`), „4diac IDE“ mit
-   Workspace-Auswahl und je Training eine IDE-Verknüpfung (siehe 2.5).
-10. `--new-project`: Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
-    Namensprüfung ist festgelegt).
+   Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet
+   wird (Quelle: GitHub Release des Installers per HTTPS, alles Weitere prüft der
+   Installer per SHA256 aus dem Manifest).
+4. **Python + PowerShell oder nur PowerShell?** Bzw. eigene Downloads (portable) oder
+   `winget`/Chocolatey/Scoop? (siehe 3.1)
+5. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
+6. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
+7. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+   Namensprüfung ist festgelegt)
+8. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
+9. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
+   und alte Sicherungs-Branches? (siehe 2.6)
+
+### Entschieden
+
+- **Plattform:** Windows only (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
+- **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
+- **Offline:** Installation online; danach muss alles offline laufen.
+- **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
+- **4diac FORTE:** wird **nicht** installiert (2026-11-13).
+- **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
+  ISO-Designer lädt jeder selbst (2026-11-13, siehe 6).
+- **Verknüpfungen:** Desktop **unbedingt** (plus Startmenü): „4diac Projekte“
+  (`C:\ms\sl\prj`), „4diac IDE“ mit Workspace-Auswahl und je Training eine
+  IDE-Verknüpfung (siehe 2.5).
