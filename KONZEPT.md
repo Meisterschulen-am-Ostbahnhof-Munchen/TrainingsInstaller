@@ -20,6 +20,7 @@ Installiert bzw. eingerichtet werden:
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
+| logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **Build b-179** aus Release `v0.28l` von `4diac_training1` – festgedübelt (siehe 2.7) |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
 | weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
@@ -608,6 +609,109 @@ nächsten `install.cmd` aktualisiert:
 Die Verknüpfungen zeigen weiter auf `tools\4diac-ide\4diac-ide.exe` und bleiben
 unverändert. ❓ Alte IDE-ZIPs aus `downloads\` löschen (spart ca. 300 MB je Version)?
 
+### 2.7 Firmware und ELF-Bibliotheken – immer synchron
+
+**Grundregel:** Der Installer lädt genau **eine** Firmware-Fassung. Alle Trainings-Repos
+im Manifest müssen die dazu passenden ELF-Bibliotheken enthalten. Firmware und ELFs
+werden nur **gemeinsam** gewechselt.
+
+**Was ist was:**
+- **Firmware** = logiBUS-Build (FORTE-Kern, ISOBUS-Stack, Treiber, ELF-Lader), je
+  Board-Typ (Target) eine Datei. Sie wird auf das Gerät gespielt.
+- **ELF-Bibliotheken** = je 4diac-Bibliothek eine Datei, liegen **im Trainings-Repo**
+  unter `Ventilsteuerung/4diacIDE-workspace/.lib/<Lib>-<Ver>/elf/<arch>/`, je für
+  `riscv32` (ESP32-P4, ESP32-S31) und `xtensa` (ESP32-S3). Sie werden nicht geflasht,
+  sondern von den Deploy-/Preload-Skripten des Repos nach `/data/elf-libs/` auf das
+  Gerät geladen.
+- **Wann passt beides?** Nur wenn Firmware und ELFs aus **demselben Build-Stand**
+  stammen. Die ABI-Nummer (`forte_abi`, heute 6; steht in jeder ELF als
+  `ELFLIB:<name>:<version>:<forte_abi>:<arch>`) ist notwendig, aber nicht hinreichend:
+  Braucht eine neuere Bibliothek eine Funktion, die erst eine neuere Firmware mitbringt,
+  fällt das erst beim Laden auf dem Gerät auf (Beispiel: ELF aus `v0.28k` lädt nur mit
+  Firmware b-178).
+
+**Quelle – am training1-Release:** Die Firmware hängt als Assets an **demselben**
+GitHub-Release von `4diac_training1`, dessen Tag auch im Manifest steht. Ein Tag = ELFs
+im Repo + Firmware im Release, beides kann nicht auseinanderlaufen. Hochgeladen wird mit
+`internal-scripts/release_firmware.py` im training1-Repo (berechnet SHA256, schreibt
+`firmware.json`, `gh release upload`).
+
+| | |
+|---|---|
+| Release  | `4diac_training1` **v0.28l** |
+| Build    | `v0.27-alpha-b-179-g24534469` (LOGIBUS `24534469`, FORTE `8d02d14f`), `forte_abi` 6 |
+| Beschreibung | `firmware.json` – <https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28l/firmware.json> |
+| SHA256 `firmware.json` | `13842ab6e7d1272b5192eede1bba5ed747ab1e2c60e76001361bad3396b04deb` (= GitHub-Digest) |
+| Dateien  | je Target `Application_<Target>.bin` und `merged-flash_<Target>.bin`, 14 Targets = 28 Dateien, zusammen ca. **68 MB** |
+| Lizenz   | eigene Firmware (Meisterschule) |
+
+`firmware.json` (Auszug):
+
+```json
+{
+  "build": "v0.27-alpha-b-179-g24534469",
+  "logibus_commit": "24534469",
+  "forte_commit": "8d02d14f7a01d535b52924661d0517495dbe8b51",
+  "training1": "v0.28l",
+  "forte_abi": 6,
+  "targets": {
+    "ESP32P4_NodeISO20": {
+      "arch": "riscv32",
+      "application":  { "file": "Application_ESP32P4_NodeISO20.bin",  "size": 2222720, "sha256": "7cae96b1…" },
+      "merged_flash": { "file": "merged-flash_ESP32P4_NodeISO20.bin", "size": 2353792, "sha256": "bc640f8d…" }
+    }
+  }
+}
+```
+
+Das Manifest pinnt nur die `firmware.json` (URL + SHA256); die SHA256 der 28 `.bin`
+stehen darin. Damit ist jede Datei über die Prüfsummenkette abgesichert.
+
+**Targets** (Schulung nutzt quasi alle, daher werden **alle** geladen):
+
+| arch | Targets (Name wie im Dateinamen) |
+|---|---|
+| riscv32 | `ESP32P4_NodeISO20`, `ESP32P4_NodeISO20_V3`, `ESP32S31_Trainer20` |
+| xtensa  | `ESP32S3_deca_out`, `ESP32S3_dual_can`, `ESP32S3_dual_io`, `ESP32S3_dual_out`, `ESP32S3_octa_out`, `HutschienenmopedXL`, `HutschienenmopedXL26`, `HutschienenmopedXL_1ETH`, `HutschienenmopedXL_2ETH`, `M5_CoreS3_1ETH`, `lilygo_T_Connect_Pro` |
+
+Die Target-Liste kommt aus `firmware.json`, nicht aus dem Code des Installers.
+
+**Ablage auf dem PC:** `C:\ms\sl\firmware\<Target>\` mit beiden Dateien, dazu
+`C:\ms\sl\firmware\firmware.json` als Versionsmerker (statt `.ms-sl-version`).
+
+**Synchron-Prüfung durch den Installer** (vor jedem Download/Update, sonst Abbruch):
+- `firmware.json` → `training1` muss gleich dem `ref` von `4diac_training1` im Manifest
+  sein; `4diac_training1_empty` hat denselben Tag (siehe 3.2).
+- Jedes weitere Trainings-Repo muss zum selben Stand gehören (siehe Offene Frage
+  SlurryTanker/EasyExampleCounter, 7).
+- Optional (`--check`): für jede Bibliothek aus `LIB_VERSIONS`
+  (`Ventilsteuerung/scripts_central/elf_libs_manifest_lib.py`) den `ELFLIB`-String der
+  ELF lesen und `forte_abi`/`arch` mit `firmware.json` vergleichen. **Nicht** alle Dateien
+  unter `.lib` auswerten: dort liegen auch alte, ungenutzte ELF-Versionen (teils ohne
+  `ELFLIB`).
+
+**Firmware wechseln** (Manifest zeigt auf ein neues Release):
+1. Neue `firmware.json` laden und prüfen, dann alle `.bin` nach
+   `C:\ms\sl\firmware.neu\<Target>\` laden und je SHA256 prüfen.
+2. Trainings-Repos auf den neuen Tag bringen – genau wie `--update` (2.6, inkl.
+   Sicherungs-Branch und `.SUB`-Sicherung). Damit kommen die neuen ELFs.
+3. Erst wenn 1 **und** 2 geklappt haben: **alte Firmware löschen** (`firmware\`) und
+   `firmware.neu` in `firmware` umbenennen. Bricht 2 ab (z. B. IDE offen), bleibt die
+   alte Firmware liegen – sie passt dann weiter zu den alten ELFs.
+4. Bericht: „Neue Firmware b-… – Geräte bitte aktualisieren (siehe unten)“.
+
+Es gibt also nie zwei Firmware-Fassungen nebeneinander und nie neue ELFs mit alter
+Firmware (oder umgekehrt).
+
+**Auf das Gerät bringen – macht der Installer nicht:**
+- **Update** (Gerät hat schon eine aktuelle logiBUS-Firmware): `Application_<Target>.bin`
+  im Browser über den Web-File-Server des Geräts hochladen und „update“ wählen (OTA).
+  Kein Tool, kein Treiber, kein Admin – das kann der Schüler.
+- **Erst-Flashen** neuer Boards bzw. Boards mit alter Partitionstabelle (vor Oktober
+  2026): `merged-flash_<Target>.bin` per USB mit `esptool` ab Adresse `0x0`, danach
+  `/data` einmal formatieren (Button im File-Server). Das macht der **Trainer**;
+  `esptool` installiert der Installer nicht (siehe 6).
+
 ## 3. Architektur (Vorschlag)
 
 ### 3.1 Henne-Ei-Problem
@@ -703,29 +807,35 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
     "sha256": "afde6fd2fddef535492708c9f5e229e678fd1fa7108ff053937b8300c451ae51",
     "target": "tools/4diac-ide/dropins"
   },
+  "firmware": {
+    "build": "v0.27-alpha-b-179-g24534469",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28l/firmware.json",
+    "sha256": "13842ab6e7d1272b5192eede1bba5ed747ab1e2c60e76001361bad3396b04deb",
+    "target": "firmware"
+  },
   "repos": {
     "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
-      "ref": "v0.28j",
+      "ref": "v0.28l",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1"
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
-      "ref": "v0.28j",
+      "ref": "v0.28l",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1 (leer)",
       "template_for_new_projects": true
     },
     "4diac-SlurryTanker_AX-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
-      "ref": "<neuer Tag nach .metadata-Bereinigung>",
+      "ref": "<Tag mit .lib/ELFs passend zu v0.28l>",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
-      "ref": "v1.12",
+      "ref": "<Tag mit .lib/ELFs passend zu v0.28l>",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Easy Example Counter"
     }
@@ -743,8 +853,13 @@ Manifest eintragen. Geklont wird mit `git clone --branch <tag>`; danach legt der
 Installer den lokalen Arbeits-Branch **`arbeit`** an (`git switch -c arbeit`), damit
 Commits des Schülers (z. B. per EGit) nicht auf einem *detached HEAD* landen.
 `4diac_training1` und `4diac_training1_empty` bekommen immer **denselben** Tag (beide
-werden gemeinsam released). `4diac-SlurryTanker_AX-sample` hat noch keinen passenden Tag
-(`main` ist nicht getaggt, eingecheckter `.metadata`) – neuer Tag nach der Bereinigung.
+werden gemeinsam released; `_empty` wird per CI aus training1 synchronisiert).
+Alle Tags müssen zur Firmware passen (siehe 2.7): `4diac-SlurryTanker_AX-sample`
+(`.metadata` inzwischen entfernt) und `4diac_EasyExampleCounter` enthalten noch **keine**
+ELF-Bibliotheken und bekommen erst einen Tag, wenn ihr `.lib`-Stand zu `v0.28l` passt.
+
+`firmware`: zeigt auf die `firmware.json` am training1-Release (siehe 2.7); `target`
+ist der Ordner unter `C:\ms\sl\`.
 `workspace` ist relativ zum Repo-Ordner, `shortcut` der Name der Verknüpfung.
 `template_for_new_projects` markiert das Repo, das `--new-project` kopiert.
 
@@ -772,6 +887,10 @@ C:\ms\sl\
 │   ├── 4diac-SlurryTanker_AX-sample\
 │   ├── 4diac_EasyExampleCounter\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
+├── firmware\             ← siehe 2.7
+│   ├── firmware.json     ← Versionsmerker
+│   ├── ESP32S3_dual_can\ ← Application_….bin + merged-flash_….bin
+│   └── …                 ← je Target ein Ordner (14)
 ├── downloads\            ← Cache, ermöglicht Offline-Wiederholung
 └── logs\                 ← install_<JJJJMMTT>_<hhmmss>.log je Lauf
 ```
@@ -791,6 +910,8 @@ C:\ms\sl\
    Auto-Import-Plugin nach `tools\4diac-ide\dropins\` kopieren,
    `ms-sl-customization.ini` schreiben (siehe 2.5)
 4. Repositories nach `C:\ms\sl\prj\<repo>` klonen bzw. aktualisieren
+4a. Firmware: Synchron-Prüfung, alle Targets nach `C:\ms\sl\firmware\` laden bzw. bei
+   neuem Build gemeinsam mit den Repos wechseln (siehe 2.7)
 5. Verknüpfung pro Training anlegen (`-data <workspace>`, siehe 2.5) – den Import der
    Projekte übernimmt das Plugin beim ersten Start der IDE
 6. Abschlussbericht: was installiert, was übersprungen, was fehlgeschlagen
@@ -808,6 +929,8 @@ C:\ms\sl\
 
 - Kein allgemeiner Paketmanager
 - Keine Installation von Treibern/Hardware-Tools (auch keine mit Admin-Pflicht)
+- **Kein Flashen:** Der Installer legt die Firmware nur ab; `esptool` wird nicht
+  installiert. Update per Browser (Schüler), Erst-Flashen per USB (Trainer), siehe 2.7.
 - **ISO-Designer** (Jetter, ISOBUS-VT-Pools) wird **nicht** installiert – den lädt jeder
   Teilnehmer selbst herunter.
 
@@ -829,6 +952,9 @@ C:\ms\sl\
 6. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
 7. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
    und alte Sicherungs-Branches? (siehe 2.6)
+8. **SlurryTanker und EasyExampleCounter:** haben keine ELF-Bibliotheken. Den `.lib`-Stand
+   per CI-Sync aus training1 übernehmen (wie bei `_empty`), oder vorerst nicht
+   installieren? (siehe 2.7, 3.2)
 
 ### Entschieden
 
@@ -840,6 +966,9 @@ C:\ms\sl\
 - **Ablauf/Architektur:** `install.ps1` lädt nur Python (zweiter Start: nur bei anderer
   Version), danach macht Python alles; GUI mit `tkinter`, auch headless (2026-11-25,
   siehe 3.1).
+- **Firmware:** eine Fassung für alle 14 Targets, als Assets am training1-Release mit
+  `firmware.json`; Firmware und ELFs immer gemeinsam wechseln; Installer flasht nicht
+  (2026-11-25, siehe 2.7).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
