@@ -20,7 +20,7 @@ Installiert bzw. eingerichtet werden:
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
-| logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **Build b-179** aus Release `v0.28l` von `4diac_training1` – festgedübelt (siehe 2.7) |
+| logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **Build b-190** aus Release `v0.28m` von `4diac_training1` – festgedübelt (siehe 2.7) |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
 | weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
@@ -634,14 +634,16 @@ werden nur **gemeinsam** gewechselt.
 GitHub-Release von `4diac_training1`, dessen Tag auch im Manifest steht. Ein Tag = ELFs
 im Repo + Firmware im Release, beides kann nicht auseinanderlaufen. Hochgeladen wird mit
 `internal-scripts/release_firmware.py` im training1-Repo (berechnet SHA256, schreibt
-`firmware.json`, `gh release upload`).
+`firmware.json` und `SHA256SUMS`, lädt hoch und schreibt den Abschnitt „Runtime“ der
+Release-Notes: `release_firmware.py --tag <tag> --build <build> --upload --notes`).
+Einzeldateien statt ZIP: Wer im Browser lädt, braucht nur `Application_<Board>.bin`.
 
 | | |
 |---|---|
-| Release  | `4diac_training1` **v0.28l** |
-| Build    | `v0.27-alpha-b-179-g24534469` (LOGIBUS `24534469`, FORTE `8d02d14f`), `forte_abi` 6 |
-| Beschreibung | `firmware.json` – <https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28l/firmware.json> |
-| SHA256 `firmware.json` | `13842ab6e7d1272b5192eede1bba5ed747ab1e2c60e76001361bad3396b04deb` (= GitHub-Digest) |
+| Release  | `4diac_training1` **v0.28m** |
+| Build    | `v0.27-alpha-b-190-ge9b19d5f` (LOGIBUS `e9b19d5f`, FORTE `acef1b32`), `forte_abi` 6 |
+| Beschreibung | `firmware.json` – <https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28m/firmware.json> |
+| SHA256 `firmware.json` | `54ce88c5f4ab14215d4083b799090c2eba4035246d8731a42cecfa9146458fa1` (= GitHub-Digest) |
 | Dateien  | je Target `Application_<Target>.bin` und `merged-flash_<Target>.bin`, 14 Targets = 28 Dateien, zusammen ca. **68 MB** |
 | Lizenz   | eigene Firmware (Meisterschule) |
 
@@ -649,16 +651,16 @@ im Repo + Firmware im Release, beides kann nicht auseinanderlaufen. Hochgeladen 
 
 ```json
 {
-  "build": "v0.27-alpha-b-179-g24534469",
-  "logibus_commit": "24534469",
-  "forte_commit": "8d02d14f7a01d535b52924661d0517495dbe8b51",
-  "training1": "v0.28l",
+  "build": "v0.27-alpha-b-190-ge9b19d5f",
+  "logibus_commit": "e9b19d5fe1747da4ecaf379f6259531f67b21213",
+  "forte_commit": "acef1b326660861bf11cfd9b84c8377d08ac2ed2",
+  "training1": "v0.28m",
   "forte_abi": 6,
   "targets": {
     "ESP32P4_NodeISO20": {
       "arch": "riscv32",
-      "application":  { "file": "Application_ESP32P4_NodeISO20.bin",  "size": 2222720, "sha256": "7cae96b1…" },
-      "merged_flash": { "file": "merged-flash_ESP32P4_NodeISO20.bin", "size": 2353792, "sha256": "bc640f8d…" }
+      "application":  { "file": "Application_ESP32P4_NodeISO20.bin",  "size": 2223008, "sha256": "6eb1bcdb…" },
+      "merged_flash": { "file": "merged-flash_ESP32P4_NodeISO20.bin", "size": 2354080, "sha256": "75cd6efb…" }
     }
   }
 }
@@ -808,34 +810,34 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
     "target": "tools/4diac-ide/dropins"
   },
   "firmware": {
-    "build": "v0.27-alpha-b-179-g24534469",
-    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28l/firmware.json",
-    "sha256": "13842ab6e7d1272b5192eede1bba5ed747ab1e2c60e76001361bad3396b04deb",
+    "build": "v0.27-alpha-b-190-ge9b19d5f",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28m/firmware.json",
+    "sha256": "54ce88c5f4ab14215d4083b799090c2eba4035246d8731a42cecfa9146458fa1",
     "target": "firmware"
   },
   "repos": {
     "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
-      "ref": "v0.28l",
+      "ref": "v0.28m",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1"
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
-      "ref": "v0.28l",
+      "ref": "v0.28m",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1 (leer)",
       "template_for_new_projects": true
     },
     "4diac-SlurryTanker_AX-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
-      "ref": "<Tag mit .lib/ELFs passend zu v0.28l>",
+      "ref": "<v0.28m nach Migration + .lib-Sync>",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
-      "ref": "<Tag mit .lib/ELFs passend zu v0.28l>",
+      "ref": "<v0.28m nach .lib-Sync>",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Easy Example Counter"
     }
@@ -854,9 +856,20 @@ Installer den lokalen Arbeits-Branch **`arbeit`** an (`git switch -c arbeit`), d
 Commits des Schülers (z. B. per EGit) nicht auf einem *detached HEAD* landen.
 `4diac_training1` und `4diac_training1_empty` bekommen immer **denselben** Tag (beide
 werden gemeinsam released; `_empty` wird per CI aus training1 synchronisiert).
-Alle Tags müssen zur Firmware passen (siehe 2.7): `4diac-SlurryTanker_AX-sample`
-(`.metadata` inzwischen entfernt) und `4diac_EasyExampleCounter` enthalten noch **keine**
-ELF-Bibliotheken und bekommen erst einen Tag, wenn ihr `.lib`-Stand zu `v0.28l` passt.
+Alle Tags müssen zur Firmware passen (siehe 2.7). Dafür gibt es den **`.lib`-Sync**:
+Bei jedem training1-Release ersetzt ein CI-Workflow in training1 (`sync_lib.py`) in jedem
+4diac-Projekt der Org den Ordner `<workspace>/.lib` (samt ELFs) durch den Stand des
+Tags, je Repo als PR; nach dem Merge bekommt das Repo **denselben Tag wie training1**.
+Damit steht im Manifest bei **allen** Repos derselbe Tag.
+
+Stand 2026-11-25:
+- erste Sync-Runde: `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`, `4diac_empty1`.
+  `4diac_EasyExampleCounter` braucht vorher eine Handkorrektur (2 Typen gibt es in der
+  neuen `.lib` nicht mehr, 3 Typen doppelt in Projekt und `.lib`).
+- `4diac-SlurryTanker_AX-sample` (`.metadata` inzwischen entfernt) ist noch im **alten
+  Stil ohne Paketnamen** (vor IDE 3.x) und muss erst in der IDE 3.x migriert werden –
+  bis dahin passt es weder zur IDE 3.4 (ohne `typelibrary`) noch zur Firmware.
+  Gleiches gilt für die übrigen alten 4diac-Repos der Org.
 
 `firmware`: zeigt auf die `firmware.json` am training1-Release (siehe 2.7); `target`
 ist der Ordner unter `C:\ms\sl\`.
@@ -952,9 +965,6 @@ C:\ms\sl\
 6. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
 7. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
    und alte Sicherungs-Branches? (siehe 2.6)
-8. **SlurryTanker und EasyExampleCounter:** haben keine ELF-Bibliotheken. Den `.lib`-Stand
-   per CI-Sync aus training1 übernehmen (wie bei `_empty`), oder vorerst nicht
-   installieren? (siehe 2.7, 3.2)
 
 ### Entschieden
 
@@ -969,6 +979,10 @@ C:\ms\sl\
 - **Firmware:** eine Fassung für alle 14 Targets, als Assets am training1-Release mit
   `firmware.json`; Firmware und ELFs immer gemeinsam wechseln; Installer flasht nicht
   (2026-11-25, siehe 2.7).
+- **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
+  Org, gleicher Tag wie training1; erste Runde EasyExampleCounter, modbus_tcp, empty1;
+  SlurryTanker_AX und alte Projekte erst nach Migration (Franz, von Hand) (2026-11-25,
+  siehe 3.2).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
