@@ -622,14 +622,55 @@ Daher zweistufig:
    Nötig, weil Windows `.ps1`-Skripte standardmäßig blockiert (Ausführungsrichtlinie
    `Restricted`/`RemoteSigned`, Internet-Markierung bei heruntergeladenen Dateien).
    `-ExecutionPolicy Bypass` gilt nur für diesen einen Aufruf, keine Systemänderung.
-1. **Bootstrap** – `install.ps1` (Windows PowerShell 5.1, auf jedem Windows vorhanden)
-   - prüft Umgebung, legt Basisverzeichnis an
-   - liest `manifest.json` mit `ConvertFrom-Json` (bordeigen, keine Zusatzmodule)
-   - installiert Git und Python
-2. **Hauptinstaller** – Python-Skript (`trainings_installer/`)
-   - liest Manifest, installiert restliche Komponenten, klont Repos, richtet Workspace ein
+1. **Bootstrap** – `install.ps1` (Windows PowerShell 5.1, auf jedem Windows vorhanden).
+   Lädt **nur Python** – so wenig PowerShell wie möglich:
+   - legt `C:\ms\sl\` an, liest den Python-Eintrag aus `manifest.json` mit
+     `ConvertFrom-Json` (bordeigen, keine Zusatzmodule)
+   - **Python schon da?** Steht in `tools\python\.ms-sl-version` die Version aus dem
+     Manifest → nichts laden (zweiter Start lädt Python nicht nochmal). Fehlt die Datei
+     oder steht eine andere Version darin → Python laden: `downloads\<datei>.tmp`, SHA256
+     prüfen (`Get-FileHash`), alten `tools\python` löschen, entpacken, Funktionsprobe
+     (`python.exe -m pip --version`), erst dann `.ms-sl-version` schreiben. So kommt auch
+     eine im Manifest erhöhte Python-Version an.
+   - TLS 1.2 für den Download ausdrücklich einschalten
+     (`[Net.ServicePointManager]::SecurityProtocol`) – Windows PowerShell 5.1 nimmt sonst
+     je nach System ältere Protokolle.
+   - startet den Hauptinstaller und reicht alle Argumente durch:
+     - **ohne Argumente** (Doppelklick) → GUI: `pythonw.exe -m trainings_installer`
+       (`pythonw` = kein Konsolenfenster)
+     - **mit Argumenten** (`--update`, `--new-project <Name>`, `--check`, `--uninstall`,
+       `--headless`) → ohne Fenster auf der Konsole: `python.exe -m trainings_installer …`
+2. **Hauptinstaller** – Python-Paket (`trainings_installer/`), erledigt **alles andere**:
+   Git, 4diac IDE (inkl. `typelibrary` löschen, Auto-Import-Plugin), Repos klonen
+   (Tag, Branch `arbeit`), Workspace-Liste, PATH, Verknüpfungen, Bericht. Herunterladen,
+   SHA256-Prüfung und Entpacken gibt es damit nur **einmal** (in Python).
 
-❓ Alternative: alles in PowerShell, oder Verwendung von `winget` / Chocolatey / Scoop.
+**Aufbau des Hauptinstallers:**
+- **Kern** (`core`) ohne jede Oberfläche: alle Schritte aus 4, 2.5 und 2.6. Meldet
+  Fortschritt und Ergebnisse über Rückruf-Funktionen.
+- **GUI** (`gui`) mit **`tkinter`** – ist im Python-ZIP bereits enthalten (siehe 2.4),
+  also kein `pip install`, nichts Zusätzliches aus dem Netz. Knöpfe *Installieren*,
+  *Trainings aktualisieren*, *Neues Projekt* (mit Namensfeld) und *Deinstallieren*,
+  Fortschrittsbalken, Bericht. Der Kern läuft in einem eigenen Thread, damit das Fenster
+  während der Downloads nicht einfriert; Meldungen gehen über eine Queue an die GUI.
+  Gerade beim Update zeigt die GUI „IDE bitte schließen“ und die gesicherten `.SUB`.
+- **Konsole** (`cli`, headless) – dieselben Funktionen ohne Fenster. Für das
+  Lehrer-Notebook, für Tests auf einem frischen Benutzerkonto und für automatische Tests.
+- GUI und Konsole sind nur zwei Oberflächen auf denselben Kern – keine Logik doppelt.
+- **Log:** immer `C:\ms\sl\logs\install_<JJJJMMTT>_<hhmmss>.log` – wichtig, weil
+  `pythonw` keine Konsole hat. Fehler zusätzlich in der GUI mit Hinweis auf die Logdatei.
+
+```
+install.cmd → install.ps1:  Python da + richtige Version?  nein → laden, SHA256, entpacken
+                            → pythonw -m trainings_installer          (GUI, Doppelklick)
+                            → python  -m trainings_installer --…      (headless)
+Python-Kern:  Git → 4diac IDE (+ typelibrary löschen, Plugin) → Repos (Tag, Branch arbeit)
+              → Workspace-Liste → PATH → Verknüpfungen → Bericht
+```
+
+Nicht verwendet: `winget`/Chocolatey/Scoop (Versionen nicht festdübelbar bzw. eigene
+Installation nötig) und „alles in PowerShell“ (Git-Logik aus 2.6 und GUI wären in
+PowerShell 5.1 deutlich mühsamer).
 
 ### 3.2 Manifest-getrieben
 
@@ -718,7 +759,7 @@ sichern die Downloads ab.
 C:\ms\sl\
 ├── tools\
 │   ├── git\
-│   ├── python\
+│   ├── python\           ← mit .ms-sl-version (Prüfung durch install.ps1)
 │   └── 4diac-ide\
 │       ├── dropins\
 │       │   └── de.meisterschulen.fordiac.ide.autoimport_1.0.0.jar
@@ -732,11 +773,13 @@ C:\ms\sl\
 │   ├── 4diac_EasyExampleCounter\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── downloads\            ← Cache, ermöglicht Offline-Wiederholung
-└── install.log
+└── logs\                 ← install_<JJJJMMTT>_<hhmmss>.log je Lauf
 ```
 
 ## 4. Ablauf
 
+0. Bootstrap (`install.ps1`, siehe 3.1): Python prüfen bzw. laden, dann Hauptinstaller
+   starten – GUI oder headless. Alle folgenden Schritte macht der Python-Kern.
 1. Umgebungsprüfung (OS, Architektur, freier Speicher, Internet)
 2. Manifest laden (lokal oder ❓ von URL)
 3. Für jede Komponente: *bereits in der Manifest-Version vorhanden?* → überspringen
@@ -779,14 +822,12 @@ C:\ms\sl\
    Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet
    wird (Quelle: GitHub Release des Installers per HTTPS, alles Weitere prüft der
    Installer per SHA256 aus dem Manifest).
-3. **Python + PowerShell oder nur PowerShell?** Bzw. eigene Downloads (portable) oder
-   `winget`/Chocolatey/Scoop? (siehe 3.1)
-4. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
-5. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
-6. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+3. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
+4. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
+5. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
    Namensprüfung ist festgelegt)
-7. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
-8. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
+6. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
+7. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
    und alte Sicherungs-Branches? (siehe 2.6)
 
 ### Entschieden
@@ -796,6 +837,9 @@ C:\ms\sl\
 - **Offline:** Installation online; danach muss alles offline laufen.
 - **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
 - **4diac FORTE:** wird **nicht** installiert (2026-11-13).
+- **Ablauf/Architektur:** `install.ps1` lädt nur Python (zweiter Start: nur bei anderer
+  Version), danach macht Python alles; GUI mit `tkinter`, auch headless (2026-11-25,
+  siehe 3.1).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
