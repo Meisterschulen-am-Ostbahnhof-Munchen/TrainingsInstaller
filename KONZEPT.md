@@ -364,6 +364,7 @@ ist für Schüler der schnellste Einstieg. Der Installer legt dort an:
 | „4diac Projekte“ | Ordner `C:\ms\sl\prj` (öffnet den Explorer) |
 | „4diac IDE“ | 4diac IDE mit Workspace-Auswahl (siehe unten) |
 | „4diac – Training 1“, „4diac – Slurry Tanker“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
+| „logiBUS ELF-Verwaltung“ | grafische ELF-Verwaltung aus `4diac_training1` (siehe unten) |
 
 Zusätzlich **„4diac IDE“** (Desktop + Startmenü) ohne festen Workspace: Sie zeigt beim
 Start die Workspace-Auswahl („4diac IDE Launcher“). Damit dort nicht
@@ -412,6 +413,29 @@ Aufbau einer IDE-Verknüpfung, z. B. „4diac – Training 1“:
 | Ziel | `C:\ms\sl\tools\4diac-ide\4diac-ide.exe` |
 | Argumente | `-data "C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace" -pluginCustomization "C:\ms\sl\tools\4diac-ide\ms-sl-customization.ini"` |
 | Ausführen in | `C:\ms\sl\tools\4diac-ide` |
+
+**„logiBUS ELF-Verwaltung“** – grafisches Werkzeug aus dem training1-Repo
+(`Ventilsteuerung/scripts_central/elf_manager_gui.py`). Es zeigt für alle Bibliotheken
+aus `LIB_VERSIONS` den Stand auf dem Gerät (aktuell, anderer Stand, alte Version, fehlt)
+und lädt angehakte Bibliotheken samt Abhängigkeiten als ELF-Grundausstattung hoch
+(`elf_grundausstattung.libs.json`, wie das Preload-Skript; andere Manifeste und
+`*.fboot` auf dem Gerät werden dabei gelöscht). Ergänzt das Preload-Skript, ersetzt es
+nicht.
+
+| | |
+|---|---|
+| Ziel | `C:\ms\sl\tools\python\pythonw.exe` |
+| Argumente | `elf_manager_gui.py` (ohne Argument: Gerät `logibus.local`; optional Host/IP) |
+| Ausführen in | `C:\ms\sl\prj\4diac_training1\Ventilsteuerung\scripts_central` |
+
+- „Ausführen in“ ist Pflicht: Das Skript importiert seine Nachbarmodule (`deploy_common`,
+  `elf_libs_manifest_lib`, `make_4diac_training1_deploy`,
+  `make_4diac_training1_elf_preload`) und findet die ELFs über `../4diacIDE-workspace/.lib`.
+- Nur Standardbibliothek inkl. `tkinter` – ist im Python-ZIP enthalten (siehe 2.4).
+- Die ELFs kommen aus dem training1-Tag im Manifest und passen damit zur Firmware
+  (siehe 2.7).
+- Angelegt wird die Verknüpfung nur, wenn die Datei im ausgecheckten Tag existiert
+  (erst ab dem ersten training1-Release, das sie enthält); sonst Hinweis im Bericht.
 
 Angelegt per `WScript.Shell`-COM-Objekt (`CreateShortcut`) auf dem Desktop des Benutzers
 (`[Environment]::GetFolderPath('Desktop')` – bei OneDrive-Umleitung nicht
@@ -820,7 +844,14 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
       "ref": "v0.28m",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
-      "shortcut": "4diac – Training 1"
+      "shortcut": "4diac – Training 1",
+      "tool_shortcuts": [
+        {
+          "name": "logiBUS ELF-Verwaltung",
+          "script": "Ventilsteuerung/scripts_central/elf_manager_gui.py",
+          "workdir": "Ventilsteuerung/scripts_central"
+        }
+      ]
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
@@ -875,6 +906,8 @@ Stand 2026-11-25:
 ist der Ordner unter `C:\ms\sl\`.
 `workspace` ist relativ zum Repo-Ordner, `shortcut` der Name der Verknüpfung.
 `template_for_new_projects` markiert das Repo, das `--new-project` kopiert.
+`tool_shortcuts`: Python-Werkzeuge aus dem Repo, die eine eigene Verknüpfung bekommen
+(gestartet mit `pythonw.exe`, Pfade relativ zum Repo-Ordner, siehe 2.5).
 
 Vorteile: neue Schulung = neues Manifest; Versionen werden festgenagelt; Prüfsummen
 sichern die Downloads ab.
@@ -1048,5 +1081,5 @@ C:\ms\sl\
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
   ISO-Designer lädt jeder selbst (2026-11-13, siehe 6).
 - **Verknüpfungen:** Desktop **unbedingt** (plus Startmenü): „4diac Projekte“
-  (`C:\ms\sl\prj`), „4diac IDE“ mit Workspace-Auswahl und je Training eine
-  IDE-Verknüpfung (siehe 2.5).
+  (`C:\ms\sl\prj`), „4diac IDE“ mit Workspace-Auswahl, je Training eine
+  IDE-Verknüpfung und „logiBUS ELF-Verwaltung“ (2026-11-26) (siehe 2.5).
