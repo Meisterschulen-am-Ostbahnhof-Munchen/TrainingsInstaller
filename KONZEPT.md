@@ -1027,6 +1027,11 @@ TrainingsInstaller\
 └── LIESMICH.txt            ← Kurzanleitung für Teilnehmer
 ```
 
+**Release bauen:** Tag `v<version.txt>` auf `main` pushen. Der Workflow `release.yml`
+veröffentlicht nur, wenn die Freigabe-Prüfung `check_manifest.py --full` und alle Tests grün
+sind; er baut das ZIP mit `tools/build_release.py` (genau die Dateien oben, reproduzierbar),
+startet es zur Probe (`install.cmd --help`) und legt das Release an.
+
 **Verteilung an Teilnehmer:** Link (Mail, Moodle, QR-Code im Kursraum) → ZIP laden →
 entpacken → `install.cmd` doppelklicken. Auf dem **USB-Stick** liegt dasselbe ZIP bzw.
 derselbe entpackte Ordner – kein Sonderweg. **Kein Einzeiler** (`irm … | iex` führt Code
