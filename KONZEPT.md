@@ -300,6 +300,7 @@ geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace`
 | Modbus TCP | `C:\ms\sl\prj\4diac_modbus_tcp_sample\Ventilsteuerung\4diacIDE-workspace` |
 | Modbus RTU | `C:\ms\sl\prj\4diac_modbus_rtu_sample\Ventilsteuerung\4diacIDE-workspace` |
 | Empty 1 | `C:\ms\sl\prj\4diac_empty1\Ventilsteuerung\4diacIDE-workspace` |
+| FU-Demo (APIXON) | `C:\ms\sl\prj\4diac-frequency-converter-sample-APIXON\Ventilsteuerung\4diacIDE-workspace` |
 | usw. | `C:\ms\sl\prj\<repo>\Ventilsteuerung\4diacIDE-workspace` |
 
 Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-Ordner.
@@ -922,6 +923,12 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
       "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Empty 1"
+    },
+    "4diac-frequency-converter-sample-APIXON": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-frequency-converter-sample-APIXON.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – FU-Demo (APIXON)"
     }
   }
 }
@@ -948,16 +955,17 @@ Damit steht im Manifest bei **allen** Repos derselbe Tag.
 `main`, Workspace `Ventilsteuerung/4diacIDE-workspace`, Projekt `test`, alle im
 `.lib`-Sync): `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`,
 `4diac-SlurryTanker-sample`, `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`,
-`4diac_modbus_rtu_sample`, `4diac_empty1`. Die beiden SlurryTanker und `modbus_rtu` sind
-ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
+`4diac_modbus_rtu_sample`, `4diac_empty1`, `4diac-frequency-converter-sample-APIXON`
+(dort heißt das Projekt **`FU_Demo`** statt `test`). Die beiden SlurryTanker,
+`modbus_rtu` und APIXON sind ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
 
-**Noch nicht aufgenommen** (nicht umgestellt): `4diac-frequency-converter-sample-APIXON`
-(neuer Stil nur auf `feature/fu-demo`), `4diac-SlurryTanker-sample-Hutschienenmoped`,
+**Noch nicht aufgenommen** (nicht umgestellt): `4diac-SlurryTanker-sample-Hutschienenmoped`,
 `4diac_template`. Sie kommen ins Manifest, sobald sie umgestellt sind und im Sync laufen.
 
 Ab `v0.28q` enthält jedes Repo auch `Ventilsteuerung/scripts_central` (Preload,
 Deploy-Basis, `elf_manager_gui.py`) sowie `test/scripts/RunSkript_PreloadELF.bat`,
-`RunSkript_ElfManager.bat` und passende Launches in `test/Launches` – die ELF-Verwaltung
+`RunSkript_ElfManager.bat` und passende Launches in `test/Launches` (bei APIXON
+`FU_Demo/scripts` und `FU_Demo/Launches`) – die ELF-Verwaltung
 ist damit **in jedem Projekt aus der IDE heraus** startbar. Auf dem Desktop gibt es
 trotzdem nur **eine** Verknüpfung „logiBUS ELF-Verwaltung“ (aus training1): Alle Repos
 tragen denselben Tag, ihre ELFs sind identisch – Verknüpfungen je Projekt wären Dubletten.
@@ -1059,6 +1067,7 @@ C:\ms\sl\
 │   ├── 4diac_modbus_tcp_sample\
 │   ├── 4diac_modbus_rtu_sample\
 │   ├── 4diac_empty1\
+│   ├── 4diac-frequency-converter-sample-APIXON\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── installer\            ← Kopie des Installers (siehe 3.3), mit version.txt
 ├── firmware\             ← siehe 2.7
@@ -1144,7 +1153,7 @@ C:\ms\sl\
 - **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
   Org, gleicher Tag wie training1 (2026-11-25, siehe 3.2).
 - **Trainings-Repos im Manifest:** training1, _empty, beide SlurryTanker,
-  EasyExampleCounter, modbus_tcp, modbus_rtu, empty1; ELF-Verwaltung nur einmal auf dem
+  EasyExampleCounter, modbus_tcp, modbus_rtu, empty1, APIXON (FU-Demo); ELF-Verwaltung nur einmal auf dem
   Desktop, je Projekt über die Launches in der IDE (2026-11-26, siehe 3.2).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
