@@ -558,6 +558,9 @@ Commit, der sie gelöscht hat, dann `git checkout <commit>^ -- test_AX\Uebung2.S
    nicht), Endung `.SUB`/`.sub`. Status `A`/`M` → wird in Schritt 5 gesichert. Status `D`
    (gelöscht) → nicht kopiert (es gibt nichts zu kopieren), aber im Bericht genannt; der
    Lehrer holt sie bei Bedarf aus dem Commit davor (siehe oben).
+   `.SUB` **innerhalb von `.lib`** (Bibliothek, verwaltet vom `.lib`-Sync) werden **nicht**
+   daneben kopiert – eine Kopie wäre ein zusätzlicher Typ in der Bibliothek. Die Änderung
+   steckt im Sicherungs-Branch, der Bericht nennt die Datei (2026-11-26).
    Ist der Schüler auf einem anderen Branch als `arbeit` und hat der lokale Branch
    `arbeit` Commits, die weder in der Sicherung noch in ZIEL stecken, wird auch dessen
    Stand gesichert: `git branch sicherung_<JJJJMMTT>_<hhmmss>_arbeit arbeit` – Schritt 7
@@ -1126,7 +1129,7 @@ C:\ms\sl\
 
 - [ ] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5)
 - [ ] `--check` – nur prüfen, nichts verändern
-- [ ] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
+- [x] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [ ] `--cleanup` – alte Logs löschen; Sicherungs-Branches bleiben (siehe 2.6)
 - [ ] `--uninstall` – alles wieder entfernen

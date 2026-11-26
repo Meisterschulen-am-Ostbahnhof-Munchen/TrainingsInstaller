@@ -40,11 +40,12 @@ class App:
         bar.pack(fill="x")
         self.buttons = [
             ttk.Button(bar, text="Installieren / Reparieren", command=lambda: self.start(core.install)),
+            ttk.Button(bar, text="Trainings aktualisieren", command=self.ask_update),
             ttk.Button(bar, text="Prüfen", command=lambda: self.start(core.check)),
         ]
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
-        for text in ("Trainings aktualisieren", "Neues Projekt", "Aufräumen", "Deinstallieren"):
+        for text in ("Neues Projekt", "Aufräumen", "Deinstallieren"):
             ttk.Button(bar, text=text, state="disabled").pack(side="left", padx=(0, 6))
 
         self.progress = ttk.Progressbar(root, mode="determinate")
@@ -69,6 +70,15 @@ class App:
         self.text.insert("end", msg + "\n", level)
         self.text.see("end")
         self.text.configure(state="disabled")
+
+    def ask_update(self) -> None:
+        if messagebox.askokcancel(
+                "Trainings aktualisieren",
+                "Bitte vorher die 4diac IDE schließen.\n\n"
+                "Alle Trainings werden auf den aktuellen Stand gebracht. Deine geänderten Übungen "
+                "(.SUB) bleiben als „…_sicherung_<Datum>.SUB“ daneben erhalten."):
+            from . import update
+            self.start(update.update)
 
     def start(self, fn) -> None:
         if self.worker and self.worker.is_alive():
