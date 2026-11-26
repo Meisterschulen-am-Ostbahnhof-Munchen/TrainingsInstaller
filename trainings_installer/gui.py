@@ -45,11 +45,11 @@ class App:
             ttk.Button(bar, text="Neues Projekt", command=self.ask_new_project),
             ttk.Button(bar, text="Aufräumen", command=self.ask_cleanup),
             ttk.Button(bar, text="Prüfen", command=lambda: self.start(core.check)),
+            ttk.Button(bar, text="Deinstallieren", command=self.ask_uninstall),
         ]
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
-        for text in ("Deinstallieren",):
-            ttk.Button(bar, text=text, state="disabled").pack(side="left", padx=(0, 6))
+        self.close_when_done = False
 
         self.progress = ttk.Progressbar(root, mode="determinate")
         self.progress.pack(fill="x", padx=10, pady=8)
@@ -73,6 +73,33 @@ class App:
         self.text.insert("end", msg + "\n", level)
         self.text.see("end")
         self.text.configure(state="disabled")
+
+    def ask_uninstall(self) -> None:
+        from . import uninstall
+        if self.worker and self.worker.is_alive():
+            return
+        if not messagebox.askyesno(
+                "Deinstallieren",
+                f"Alles unter {self.paths.root} entfernen – Git, Python, 4diac IDE, Firmware, "
+                "Verknüpfungen und PATH-Einträge?", icon="warning"):
+            return
+        work = uninstall.student_work(self.paths, core.load_manifest())
+        remove_projects = True
+        if work:
+            shown = "\n".join(work[:15]) + (f"\n… und {len(work) - 15} weitere" if len(work) > 15 else "")
+            answer = messagebox.askyesnocancel(
+                "Projekte behalten?",
+                f"In {self.paths.prj} liegt Schülerarbeit:\n\n{shown}\n\n"
+                "Ja = Projekte behalten (empfohlen)\n"
+                "Nein = auch alle Projekte endgültig löschen\n"
+                "Abbrechen = nichts deinstallieren", icon="warning")
+            if answer is None:
+                return
+            remove_projects = not answer
+        self.close_when_done = True
+        self.start(lambda rep, paths: uninstall.uninstall(rep, paths, remove_projects),
+                   done_text="Deinstalliert. Das Fenster wird jetzt geschlossen."
+                   + ("" if remove_projects else f"\n\nDie Projekte liegen weiter in {self.paths.prj}."))
 
     def ask_cleanup(self) -> None:
         from . import cleanup
@@ -167,6 +194,10 @@ class App:
                                 or "Fertig.\n\nDie 4diac-Verknüpfungen liegen auf dem Desktop.")
         else:
             messagebox.showerror("Fehler", f"Es gab Fehler – Details oben und im Log:\n{self.logfile}")
+        if self.close_when_done:
+            self.close_when_done = False
+            if ok:   # Installer wird nach dem Beenden entfernt – Fenster schließen
+                self.root.destroy()
 
     def on_close(self) -> None:
         if self.worker and self.worker.is_alive():

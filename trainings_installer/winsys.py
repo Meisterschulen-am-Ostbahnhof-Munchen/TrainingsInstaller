@@ -67,6 +67,23 @@ def update_user_path(add: list[str]) -> bool:
     return True
 
 
+def remove_user_path(remove: list[str]) -> bool:
+    """Eigene Einträge aus dem Benutzer-PATH entfernen (Rohwert, REG_EXPAND_SZ)."""
+    import winreg
+
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+        try:
+            raw, _typ = winreg.QueryValueEx(key, "Path")
+        except FileNotFoundError:
+            return False
+        new = remove_from_path(raw, remove)
+        if new == raw:
+            return False
+        winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new)
+    broadcast_environment_change()
+    return True
+
+
 def broadcast_environment_change() -> None:
     HWND_BROADCAST, WM_SETTINGCHANGE, SMTO_ABORTIFHUNG = 0xFFFF, 0x1A, 0x2
     result = ctypes.c_size_t()

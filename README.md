@@ -26,9 +26,11 @@ install.cmd --update [REPO] Trainings aktualisieren (geänderte .SUB werden gesi
 install.cmd --new-project Maehwerk   neues eigenes Projekt (Kopie der leeren Vorlage)
 Neues Projekt.cmd           dasselbe per Doppelklick, fragt nur nach dem Namen
 install.cmd --cleanup       alte Downloads und Logs > 90 Tage löschen (Sicherungen bleiben)
+install.cmd --uninstall     alles entfernen; prj nur ohne Schülerarbeit
+install.cmd --uninstall --mit-projekten   auch prj samt Schülerarbeit löschen
 ```
 
-`--uninstall` und `--self-update` folgen.
+`--self-update` folgt.
 
 ## Manifest freigeben
 
