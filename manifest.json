@@ -25,15 +25,15 @@
     "target": "tools/4diac-ide/dropins"
   },
   "firmware": {
-    "build": "v0.27-alpha-b-237-g7203f84c",
-    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28r/firmware.json",
-    "sha256": "9376937c482cf854d30614a124478cf15426464b4aa499e5952ede22e12d36d3",
+    "build": "v0.27-alpha-b-244-gb5ae40d1",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28s/firmware.json",
+    "sha256": "8a351347f1b305546f915f0a7acebd847f2556000ebf8b5277560061e5efe6f6",
     "target": "firmware"
   },
   "repos": {
     "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1",
       "tool_shortcuts": [
@@ -46,62 +46,62 @@
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1 (leer)",
       "template_for_new_projects": true
     },
     "4diac-SlurryTanker_AX-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker AX"
     },
     "4diac-SlurryTanker-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker-sample.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
     "4diac-SlurryTanker-sample-Hutschienenmoped": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker-sample-Hutschienenmoped.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker Hutschienenmoped"
     },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Easy Example Counter"
     },
     "4diac_modbus_tcp_sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_modbus_tcp_sample.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Modbus TCP"
     },
     "4diac_modbus_rtu_sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_modbus_rtu_sample.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Modbus RTU"
     },
     "4diac_empty1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_empty1.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Empty 1"
     },
     "4diac-frequency-converter-sample-APIXON": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-frequency-converter-sample-APIXON.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – FU-Demo (APIXON)"
     },
     "4diac_template": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_template.git",
-      "ref": "v0.28r",
+      "ref": "v0.28s",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Template"
     }
