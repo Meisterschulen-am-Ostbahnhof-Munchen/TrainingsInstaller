@@ -881,7 +881,70 @@ sichern die Downloads ab.
 
 ❓ Ein Manifest pro Schulung (Profile, z. B. `--profile grundkurs`)?
 
-### 3.3 Verzeichnisstruktur auf dem Ziel-PC (Vorschlag)
+### 3.3 Verteilung, Manifest und Selbst-Update
+
+**Der Installer ist ein GitHub-Release** dieses Repos (`TrainingsInstaller`), Tag z. B.
+`v1.0.0`. Einziges Asset ist **`TrainingsInstaller.zip`** – immer derselbe Dateiname, die
+Version steht im Tag und in `version.txt` im ZIP. Dadurch gibt es einen festen Link, der
+immer auf die neueste Version zeigt:
+
+<https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/TrainingsInstaller/releases/latest/download/TrainingsInstaller.zip>
+
+Inhalt des ZIP:
+
+```
+TrainingsInstaller\
+├── install.cmd             ← Doppelklick
+├── install.ps1             ← Bootstrap (lädt Python, siehe 3.1)
+├── trainings_installer\    ← Python-Paket (Kern, GUI, Konsole)
+├── manifest.json           ← alle Versionen + SHA256 (siehe 3.2)
+├── version.txt             ← Installer-Version, z. B. 1.0.0
+└── LIESMICH.txt            ← Kurzanleitung für Teilnehmer
+```
+
+**Verteilung an Teilnehmer:** Link (Mail, Moodle, QR-Code im Kursraum) → ZIP laden →
+entpacken → `install.cmd` doppelklicken. Auf dem **USB-Stick** liegt dasselbe ZIP bzw.
+derselbe entpackte Ordner – kein Sonderweg. **Kein Einzeiler** (`irm … | iex` führt Code
+ungeprüft aus dem Netz aus).
+
+Beim ersten Start **kopiert sich der Installer nach `C:\ms\sl\installer\`** und legt im
+Startmenü die Verknüpfung **„4diac Trainings-Installer“** (GUI) an. Danach braucht man das
+heruntergeladene ZIP nicht mehr; Update, Neues Projekt usw. laufen über diese
+Verknüpfung.
+
+⚠ Zu testen: Dateien aus einem heruntergeladenen ZIP tragen die Internet-Markierung
+(*Mark of the Web*). `-ExecutionPolicy Bypass` (siehe 3.1) deckt das für `install.ps1` ab;
+ob Windows/SmartScreen beim Doppelklick auf `install.cmd` trotzdem nachfragt, prüfen wir auf
+einem frischen Schul-PC. Falls ja: Hinweis in `LIESMICH.txt` („ZIP vor dem Entpacken:
+Rechtsklick → Eigenschaften → Zulassen“), und `install.ps1` entfernt die Markierung
+danach bei seinen eigenen Dateien (`Unblock-File`).
+
+**Woher kommt das Manifest?** **Aus dem ZIP** (lokal neben `install.cmd`), nicht per URL.
+Installer-Version und Manifest gehören fest zusammen: **eine Installer-Version = genau
+ein Satz Versionen** (IDE, Git, Python, Plugin, Repo-Tags, Firmware). Neuer Stand (z. B.
+neuer training1-Tag mit neuer Firmware) = neues Manifest = **neues Installer-Release**.
+So ist jederzeit nachvollziehbar, welcher Teilnehmer welchen Stand hat (`version.txt` im
+Bericht und im Log).
+
+**Selbst-Update:**
+1. Bei jedem Start (nur wenn online) fragt der Installer
+   `GET https://api.github.com/repos/Meisterschulen-am-Ostbahnhof-Munchen/TrainingsInstaller/releases/latest`
+   ab – ohne Login. Offline oder Fehler → einfach weiter mit der vorhandenen Version.
+2. Ist der Tag neuer als `version.txt`:
+   - **GUI:** „Neue Version x.y.z verfügbar – jetzt aktualisieren?“ (Ja/Nein)
+   - **headless:** nur Hinweis im Bericht; aktualisiert wird mit `--self-update`.
+3. Aktualisieren: `TrainingsInstaller.zip` laden, SHA256 gegen den Digest des Assets aus
+   der GitHub-API prüfen, nach `C:\ms\sl\installer.neu\` entpacken, erst dann
+   `installer\` ersetzen und den Installer **neu starten**. Bricht etwas ab, bleibt die
+   alte Version.
+4. Nach dem Neustart gilt das **neue Manifest** – die eigentlichen Updates (IDE, Repos,
+   Firmware) laufen dann wie in 2.6/2.7.
+
+Der laufende Installer ersetzt sich nicht selbst, während er läuft: Das Austauschen von
+`installer\` erledigt `install.ps1` beim Neustart (Python ist dann beendet, keine
+gesperrten Dateien).
+
+### 3.4 Verzeichnisstruktur auf dem Ziel-PC (Vorschlag)
 
 ```
 C:\ms\sl\
@@ -900,6 +963,7 @@ C:\ms\sl\
 │   ├── 4diac-SlurryTanker_AX-sample\
 │   ├── 4diac_EasyExampleCounter\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
+├── installer\            ← Kopie des Installers (siehe 3.3), mit version.txt
 ├── firmware\             ← siehe 2.7
 │   ├── firmware.json     ← Versionsmerker
 │   ├── ESP32S3_dual_can\ ← Application_….bin + merged-flash_….bin
@@ -913,7 +977,7 @@ C:\ms\sl\
 0. Bootstrap (`install.ps1`, siehe 3.1): Python prüfen bzw. laden, dann Hauptinstaller
    starten – GUI oder headless. Alle folgenden Schritte macht der Python-Kern.
 1. Umgebungsprüfung (OS, Architektur, freier Speicher, Internet)
-2. Manifest laden (lokal oder ❓ von URL)
+2. Selbst-Update prüfen (siehe 3.3), dann Manifest aus dem Installer-Ordner laden
 3. Für jede Komponente: *bereits in der Manifest-Version vorhanden?* → überspringen
    (4diac IDE: Vergleich mit `.ms-sl-version`; bei abweichender Version Update nach 2.6
    inkl. Löschen von `.metadata`), sonst
@@ -936,7 +1000,7 @@ C:\ms\sl\
 - [ ] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [ ] `--uninstall` – alles wieder entfernen
-- [ ] ❓ Aktualisierung des Installers selbst
+- [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 
 ## 6. Nicht-Ziele
 
@@ -952,18 +1016,10 @@ C:\ms\sl\
 ### Offen
 
 1. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
-2. **Verteilung an Teilnehmer:** Einzeiler, ZIP oder USB-Stick?
-   Hinweis: `irm … | iex` führt Code ungeprüft direkt aus dem Netz aus und wird daher
-   **nicht** verwendet. Gestartet wird immer über `install.cmd` (siehe 3.1). Falls
-   Einzeiler, dann so, dass das Skript erst als Datei gespeichert und dann gestartet
-   wird (Quelle: GitHub Release des Installers per HTTPS, alles Weitere prüft der
-   Installer per SHA256 aus dem Manifest).
-3. **Woher kommt das Manifest?** Lokal neben `install.cmd` oder per URL (siehe 4).
-4. **Wie aktualisiert sich der Installer selbst?** (siehe 5)
-5. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+2. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
    Namensprüfung ist festgelegt)
-6. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
-7. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
+3. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
+4. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
    und alte Sicherungs-Branches? (siehe 2.6)
 
 ### Entschieden
@@ -979,6 +1035,10 @@ C:\ms\sl\
 - **Firmware:** eine Fassung für alle 14 Targets, als Assets am training1-Release mit
   `firmware.json`; Firmware und ELFs immer gemeinsam wechseln; Installer flasht nicht
   (2026-11-25, siehe 2.7).
+- **Verteilung, Manifest, Selbst-Update:** Installer als GitHub-Release
+  (`TrainingsInstaller.zip`, fester „latest“-Link, auch für USB-Stick); kein Einzeiler;
+  Manifest liegt im ZIP (eine Installer-Version = ein Satz Versionen); Selbst-Update über
+  die GitHub-API mit Nachfrage in der GUI (2026-11-26, siehe 3.3).
 - **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
   Org, gleicher Tag wie training1; erste Runde EasyExampleCounter, modbus_tcp, empty1;
   SlurryTanker_AX und alte Projekte erst nach Migration (Franz, von Hand) (2026-11-25,
