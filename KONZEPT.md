@@ -1137,7 +1137,8 @@ C:\ms\sl\
 - [ ] `--check` – nur prüfen, nichts verändern
 - [x] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
-- [ ] `--cleanup` – alte Logs löschen; Sicherungs-Branches bleiben (siehe 2.6)
+- [x] `--cleanup` – alte Downloads und Logs älter als 90 Tage löschen; Sicherungs-Branches
+  und `_sicherung_`-Dateien bleiben (siehe 2.6; GUI-Knopf „Aufräumen“ mit Liste vorab)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 

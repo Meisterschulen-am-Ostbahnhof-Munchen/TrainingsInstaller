@@ -9,9 +9,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from . import firmware, manifest, repos, shortcuts, tools, winsys
+from . import cleanup, firmware, manifest, repos, shortcuts, tools, winsys
 from .download import DownloadError
-from .manifest import url_filename
 from .paths import Paths
 from .report import Reporter, log
 
@@ -53,12 +52,9 @@ def _tool_path_entries(paths: Paths) -> list[str]:
 
 def _cleanup_downloads(paths: Paths, m: dict, rep: Reporter) -> None:
     """Automatisch: Downloads löschen, die das Manifest nicht mehr nennt (2.6 „Aufräumen“)."""
-    keep = {url_filename(m[k]["url"]) for k in manifest.TOOLS}
-    keep.add(f"firmware_{m['firmware']['sha256'][:12]}.json")
-    for f in paths.downloads.iterdir():
-        if f.is_file() and f.name not in keep:
-            f.unlink(missing_ok=True)
-            rep.info(f"Alter Download gelöscht: {f.name}")
+    for f in cleanup.unused_downloads(paths, m):
+        f.unlink(missing_ok=True)
+        rep.info(f"Alter Download gelöscht: {f.name}")
 
 
 def install(rep: Reporter, paths: Paths | None = None) -> bool:
@@ -163,4 +159,9 @@ def check(rep: Reporter, paths: Paths | None = None) -> bool:
             f"Firmware: {m['firmware']['build']}")
     else:
         rep.warn("Firmware: nicht abgelegt")
+    from .report import current_logfile
+    todo = cleanup.plan(paths, m, keep_log=current_logfile())
+    if todo:
+        rep.info(f"„Aufräumen“ (--cleanup) würde {cleanup.count(len(todo))} löschen: "
+                 + ", ".join(cleanup.describe(paths, todo)))
     return rep.report.ok

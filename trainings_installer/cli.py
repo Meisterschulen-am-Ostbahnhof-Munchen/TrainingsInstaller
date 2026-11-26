@@ -8,7 +8,7 @@ from . import core
 from .paths import Paths
 from .report import Reporter, setup_logging
 
-COMING = ("cleanup", "uninstall", "self_update")
+COMING = ("uninstall", "self_update")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Trainings aktualisieren (alle oder nur REPO); geänderte .SUB werden gesichert")
     g.add_argument("--new-project", nargs="?", const="", metavar="NAME",
                    help="neues eigenes Projekt als Kopie der leeren Vorlage (ohne NAME: wird abgefragt)")
-    g.add_argument("--cleanup", action="store_true", help="alte Logs löschen (folgt)")
+    g.add_argument("--cleanup", action="store_true", help="alte Downloads und Logs älter als 90 Tage löschen (Sicherungen bleiben)")
     g.add_argument("--uninstall", action="store_true", help="alles entfernen (folgt)")
     g.add_argument("--self-update", action="store_true", help="Installer aktualisieren (folgt)")
     g.add_argument("--gui", action="store_true", help="grafische Oberfläche")
@@ -52,6 +52,9 @@ def main(argv: list[str]) -> int:
     rep = Reporter()
     if args.check:
         ok = core.check(rep, paths)
+    elif args.cleanup:
+        from . import cleanup
+        ok = cleanup.cleanup(rep, paths)
     elif args.new_project:
         from . import new_project
         ok = new_project.new_project(rep, paths, args.new_project)

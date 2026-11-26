@@ -43,11 +43,12 @@ class App:
             ttk.Button(bar, text="Installieren / Reparieren", command=lambda: self.start(core.install)),
             ttk.Button(bar, text="Trainings aktualisieren", command=self.ask_update),
             ttk.Button(bar, text="Neues Projekt", command=self.ask_new_project),
+            ttk.Button(bar, text="Aufräumen", command=self.ask_cleanup),
             ttk.Button(bar, text="Prüfen", command=lambda: self.start(core.check)),
         ]
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
-        for text in ("Aufräumen", "Deinstallieren"):
+        for text in ("Deinstallieren",):
             ttk.Button(bar, text=text, state="disabled").pack(side="left", padx=(0, 6))
 
         self.progress = ttk.Progressbar(root, mode="determinate")
@@ -72,6 +73,25 @@ class App:
         self.text.insert("end", msg + "\n", level)
         self.text.see("end")
         self.text.configure(state="disabled")
+
+    def ask_cleanup(self) -> None:
+        from . import cleanup
+        if self.worker and self.worker.is_alive():
+            return
+        files = cleanup.plan(self.paths, core.load_manifest(), keep_log=self.logfile)
+        if not files:
+            messagebox.showinfo("Aufräumen", "Nichts aufzuräumen: keine alten Downloads und keine "
+                                f"Logs älter als {cleanup.LOG_DAYS} Tage.")
+            return
+        lines = cleanup.describe(self.paths, files)
+        shown = "\n".join(lines[:20]) + (f"\n… und {len(lines) - 20} weitere" if len(lines) > 20 else "")
+        if messagebox.askyesno(
+                "Aufräumen",
+                f"Zu löschen ({cleanup.count(len(files))}):\n\n{shown}\n\n"
+                "Projekte, Sicherungs-Branches und _sicherung_-Dateien bleiben erhalten.\n\n"
+                "Löschen?", icon="warning"):
+            self.start(lambda rep, paths: cleanup.cleanup(rep, paths, files),
+                       done_text="Aufgeräumt.")
 
     def ask_update(self) -> None:
         if messagebox.askokcancel(

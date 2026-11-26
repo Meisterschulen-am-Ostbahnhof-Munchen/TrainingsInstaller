@@ -25,9 +25,10 @@ install.cmd --check         nur prüfen
 install.cmd --update [REPO] Trainings aktualisieren (geänderte .SUB werden gesichert)
 install.cmd --new-project Maehwerk   neues eigenes Projekt (Kopie der leeren Vorlage)
 Neues Projekt.cmd           dasselbe per Doppelklick, fragt nur nach dem Namen
+install.cmd --cleanup       alte Downloads und Logs > 90 Tage löschen (Sicherungen bleiben)
 ```
 
-`--cleanup`, `--uninstall` und `--self-update` folgen.
+`--uninstall` und `--self-update` folgen.
 
 ## Manifest freigeben
 

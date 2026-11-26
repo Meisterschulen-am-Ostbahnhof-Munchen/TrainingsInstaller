@@ -12,12 +12,20 @@ from pathlib import Path
 from typing import Callable
 
 log = logging.getLogger("trainings_installer")
+_logfile: Path | None = None
+
+
+def current_logfile() -> Path | None:
+    """Log dieses Laufs (wird von --cleanup nie gelöscht)."""
+    return _logfile
 
 
 def setup_logging(logs_dir: Path, console: bool) -> Path:
     logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     logfile = logs_dir / f"install_{stamp}.log"
+    global _logfile
+    _logfile = logfile
     log.setLevel(logging.DEBUG)
     log.handlers.clear()
     fh = logging.FileHandler(logfile, encoding="utf-8")
