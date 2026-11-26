@@ -39,6 +39,28 @@ def _rmtree(p: Path) -> None:
         p.unlink()
 
 
+IGNORE_PARTS = {".metadata", "__pycache__"}   # IDE-Zwischenspeicher, kein Schülerwerk
+
+
+def _changed_files(paths: Paths, d: Path) -> list[str]:
+    """Geänderte, neue UND per .gitignore ignorierte Dateien – ohne IDE-Zwischenspeicher."""
+    out = git(paths, "status", "--porcelain=v1", "-z", "--ignored=matching",
+              "--untracked-files=all", cwd=d)
+    fields = out.split("\0")
+    files, i = [], 0
+    while i < len(fields):
+        entry = fields[i]
+        i += 1
+        if len(entry) < 4:
+            continue
+        if entry[0] in "RC":
+            i += 1   # bei Umbenennung folgt der alte Pfad
+        path = entry[3:]
+        if not IGNORE_PARTS & set(path.rstrip("/").split("/")):
+            files.append(path)
+    return files
+
+
 def student_work(paths: Paths, m: dict) -> list[str]:
     """Was in prj\\ verloren ginge: eigene Projekte, Änderungen, Sicherungen, lokale Commits."""
     out: list[str] = []
@@ -57,12 +79,13 @@ def student_work(paths: Paths, m: dict) -> list[str]:
             out.append(f"{d.name}: nicht prüfbar (Git fehlt)")
             continue
         try:
-            if git(paths, "status", "--porcelain", "--untracked-files=all", cwd=d):
-                out.append(f"{d.name}: geänderte oder neue Dateien")
+            changed = _changed_files(paths, d)
+            if changed:
+                out.append(f"{d.name}: geänderte oder neue Dateien ({len(changed)})")
             backups = git(paths, "branch", "--list", "sicherung_*", "--format=%(refname:short)", cwd=d)
             if backups:
                 out.append(f"{d.name}: Sicherungs-Branches ({len(backups.splitlines())})")
-            ahead = git(paths, "rev-list", "--count", "--branches", "--not", "--tags", "--remotes", cwd=d)
+            ahead = git(paths, "rev-list", "--count", "HEAD", "--branches", "--not", "--tags", "--remotes", cwd=d)
             if ahead not in ("", "0"):
                 out.append(f"{d.name}: eigene Commits ({ahead})")
         except GitError as e:
@@ -71,22 +94,29 @@ def student_work(paths: Paths, m: dict) -> list[str]:
 
 
 def _remove_shortcuts(paths: Paths, rep: Reporter) -> None:
+    import json
+
     from .shortcuts import _load_owned
-    n = 0
+    n, failed = 0, []
     for p in map(Path, sorted(_load_owned(paths))):
         try:
             if p.suffix.lower() == ".lnk" and p.exists():
                 p.unlink()
                 n += 1
         except OSError as e:
-            rep.warn(f"Verknüpfung nicht gelöscht: {p} ({e})")
+            failed.append(str(p))
+            rep.error(f"Verknüpfung nicht gelöscht: {p} ({e})")
     try:
         start = winsys.start_menu_dir()
         if start.is_dir() and not any(start.iterdir()):
             start.rmdir()
     except OSError:
         pass
-    paths.shortcuts_json.unlink(missing_ok=True)
+    if failed:   # Eigentum merken, damit ein zweiter Lauf sie noch löschen darf
+        paths.shortcuts_json.write_text(json.dumps(failed, ensure_ascii=False, indent=1),
+                                        encoding="utf-8")
+    else:
+        paths.shortcuts_json.unlink(missing_ok=True)
     rep.done(f"{n} Verknüpfungen entfernt (fremde bleiben)")
 
 
@@ -127,10 +157,15 @@ def uninstall(rep: Reporter, paths: Paths | None = None, remove_projects: bool |
 
     paths = paths or Paths.default()
     rep.info(f"Trainings-Installer {core.installer_version()} – Deinstallieren")
-    if winsys.running_ides(paths.tools):
+    m = core.load_manifest()
+    try:
+        busy = winsys.running_ides(paths.tools, strict=True)
+    except (RuntimeError, ValueError) as e:
+        rep.error(f"Kann nicht prüfen, ob die 4diac IDE läuft – nichts verändert ({e})")
+        return False
+    if busy or any(winsys.workspace_locked(w) for w in repos.all_workspaces(paths, m)):
         rep.error("Bitte zuerst die 4diac IDE schließen – sonst sind Dateien gesperrt")
         return False
-    m = core.load_manifest()
 
     rep.step("Projekte prüfen")
     work = student_work(paths, m)
@@ -167,6 +202,11 @@ def uninstall(rep: Reporter, paths: Paths | None = None, remove_projects: bool |
         rep.skip(f"Projekte behalten: {paths.prj}")
 
     later = [paths.python, paths.tools, paths.installer, paths.logs]
+    if not rep.report.ok:
+        # Installer behalten: nach Behebung des Fehlers --uninstall erneut ausführen
+        rep.warn("Wegen der Fehler oben bleiben Python, Installer und Logs erhalten – "
+                 "nach Behebung „Deinstallieren“ erneut starten")
+        return False
     if deferred:
         _schedule_removal(paths, later, rep)
     else:

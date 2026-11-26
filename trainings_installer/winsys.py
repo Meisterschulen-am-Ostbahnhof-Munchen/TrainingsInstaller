@@ -118,13 +118,20 @@ def new_terminal_lookup(name: str) -> str | None:
 
 # ------------------------------------------------------------- IDE geöffnet? (2.5)
 
-def running_ides(tools_dir: Path) -> list[dict]:
-    """4diac-ide.exe-Prozesse, deren Programm unter tools_dir liegt."""
+def running_ides(tools_dir: Path, strict: bool = False) -> list[dict]:
+    """4diac-ide.exe-Prozesse, deren Programm unter tools_dir liegt.
+
+    strict=True: schlägt die Abfrage fehl, RuntimeError statt „keine IDE“ (für --uninstall).
+    """
     if not IS_WINDOWS:
         return []
     r = powershell("Get-CimInstance Win32_Process -Filter \"Name='4diac-ide.exe'\" | "
                    "Select-Object ExecutablePath, CommandLine | ConvertTo-Json -Compress")
-    if r.returncode != 0 or not r.stdout.strip():
+    if r.returncode != 0:
+        if strict:
+            raise RuntimeError(f"Prozessabfrage fehlgeschlagen: {(r.stderr or '').strip()[:200]}")
+        return []
+    if not r.stdout.strip():
         return []
     data = json.loads(r.stdout)
     procs = data if isinstance(data, list) else [data]

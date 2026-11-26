@@ -84,7 +84,7 @@ class App:
                 "Verknüpfungen und PATH-Einträge?", icon="warning"):
             return
         work = uninstall.student_work(self.paths, core.load_manifest())
-        remove_projects = True
+        remove_projects = None   # nichts gefunden: der Lauf prüft unmittelbar davor noch einmal
         if work:
             shown = "\n".join(work[:15]) + (f"\n… und {len(work) - 15} weitere" if len(work) > 15 else "")
             answer = messagebox.askyesnocancel(
@@ -99,7 +99,7 @@ class App:
         self.close_when_done = True
         self.start(lambda rep, paths: uninstall.uninstall(rep, paths, remove_projects),
                    done_text="Deinstalliert. Das Fenster wird jetzt geschlossen."
-                   + ("" if remove_projects else f"\n\nDie Projekte liegen weiter in {self.paths.prj}."))
+                   + ("" if remove_projects is not False else f"\n\nDie Projekte liegen weiter in {self.paths.prj}."))
 
     def ask_cleanup(self) -> None:
         from . import cleanup

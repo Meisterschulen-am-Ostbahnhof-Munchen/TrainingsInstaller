@@ -87,6 +87,35 @@ class UninstallTest(unittest.TestCase):
         g(self.repo, "commit", "-qam", "meins")
         self.assertTrue(any("Commits" in w for w in uninstall.student_work(self.paths, self.m)))
 
+    def test_ignored_files_count_metadata_not(self):
+        (self.repo / ".gitignore").write_text("*.bak\n")
+        g(self.repo, "add", ".gitignore")
+        g(self.repo, "commit", "-qm", "ignore")
+        g(self.repo, "tag", "-f", "v1")   # Commit gehört zum Stand, nicht zur Arbeit
+        meta = self.repo / "ws" / ".metadata"
+        meta.mkdir(parents=True)
+        (meta / ".log").write_text("ide")
+        self.assertEqual(uninstall.student_work(self.paths, self.m), [])
+        (self.repo / "loesung.bak").write_text("meins")
+        self.assertTrue(any("Dateien" in w for w in uninstall.student_work(self.paths, self.m)))
+
+    def test_detached_head_commit_detected(self):
+        g(self.repo, "switch", "-q", "--detach")
+        (self.repo / "a.txt").write_text("meins")
+        g(self.repo, "commit", "-qam", "detached")
+        self.assertTrue(any("Commits" in w for w in uninstall.student_work(self.paths, self.m)))
+
+    def test_ide_query_failure_changes_nothing(self):
+        with mock.patch("trainings_installer.winsys.running_ides", side_effect=RuntimeError("x")):
+            self.assertFalse(uninstall.uninstall(Reporter(), self.paths, True, deferred=False))
+        self.assertTrue(self.own.exists())
+
+    def test_error_keeps_installer(self):
+        with mock.patch("trainings_installer.winsys.remove_user_path", side_effect=OSError("x")):
+            self.assertFalse(uninstall.uninstall(Reporter(), self.paths, True, deferred=False))
+        self.assertTrue(self.paths.installer.is_dir())
+        self.assertTrue(self.paths.python.is_dir())
+
     def test_uninstall_without_work_removes_all(self):
         ok = uninstall.uninstall(Reporter(), self.paths, None, deferred=False)
         self.assertTrue(ok)
