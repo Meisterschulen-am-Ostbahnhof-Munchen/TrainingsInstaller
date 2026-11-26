@@ -25,6 +25,23 @@ install.cmd --check         nur prüfen
 
 `--update`, `--new-project`, `--cleanup`, `--uninstall` und `--self-update` folgen.
 
+## Manifest freigeben
+
+Ein neues `manifest.json` (z. B. neuer training1-Tag) darf **nur** veröffentlicht werden,
+wenn die Freigabe-Prüfung grün ist:
+
+```
+python tools/check_manifest.py          # Tags, .lib-Inhalt, Firmware, Erreichbarkeit
+python tools/check_manifest.py --full   # zusätzlich Git, Python, IDE laden und SHA256 prüfen
+```
+
+Geprüft wird: alle Repos öffentlich und mit dem Tag aus dem Manifest, alle auf dem Tag
+von `4diac_training1`, `.lib` in jedem Repo inhaltsgleich mit training1, `firmware.json`
+(SHA256, Tag, Build, alle `.bin` am Release), `tool_shortcuts`-Skripte im Tag, alle URLs.
+Hängt der `.lib`-Sync eines Repos, bleibt die Prüfung rot – dann erst den Sync-PR mergen
+oder das Repo vorübergehend aus dem Manifest nehmen. In CI läuft die Prüfung bei jeder
+Änderung an `manifest.json` (`.github/workflows/manifest-check.yml`).
+
 ## Entwicklung
 
 ```

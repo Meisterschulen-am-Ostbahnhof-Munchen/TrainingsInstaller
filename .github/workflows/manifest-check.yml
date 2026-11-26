@@ -1,0 +1,31 @@
+name: manifest-check
+
+# Ein Manifest darf nur veröffentlicht werden, wenn alle Tags stimmen.
+# Läuft bei jeder Änderung an manifest.json; der Release-Workflow ruft dieselbe
+# Prüfung mit --full auf und bricht ab, wenn sie fehlschlägt.
+
+on:
+  pull_request:
+    paths: [manifest.json, tools/check_manifest.py, trainings_installer/manifest.py]
+  push:
+    branches: [main]
+    paths: [manifest.json, tools/check_manifest.py, trainings_installer/manifest.py]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      full:
+        type: boolean
+        default: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Freigabe-Prüfung manifest.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/check_manifest.py ${{ inputs.full && '--full' || '' }}
