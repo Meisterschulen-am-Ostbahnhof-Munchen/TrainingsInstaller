@@ -233,7 +233,6 @@ class App:
             messagebox.showerror("Fehler", f"Es gab Fehler – Details oben und im Log:\n{self.logfile}")
         if self.close_when_done:
             self.close_when_done = False
-        self.restart_when_done = False
             if ok:   # Installer wird nach dem Beenden entfernt – Fenster schließen
                 self.root.destroy()
 
