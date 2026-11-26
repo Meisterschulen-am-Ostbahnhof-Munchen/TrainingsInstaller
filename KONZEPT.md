@@ -302,6 +302,7 @@ geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace`
 | Modbus RTU | `C:\ms\sl\prj\4diac_modbus_rtu_sample\Ventilsteuerung\4diacIDE-workspace` |
 | Empty 1 | `C:\ms\sl\prj\4diac_empty1\Ventilsteuerung\4diacIDE-workspace` |
 | FU-Demo (APIXON) | `C:\ms\sl\prj\4diac-frequency-converter-sample-APIXON\Ventilsteuerung\4diacIDE-workspace` |
+| Template | `C:\ms\sl\prj\4diac_template\Ventilsteuerung\4diacIDE-workspace` |
 | usw. | `C:\ms\sl\prj\<repo>\Ventilsteuerung\4diacIDE-workspace` |
 
 Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-Ordner.
@@ -936,6 +937,12 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
       "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – FU-Demo (APIXON)"
+    },
+    "4diac_template": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_template.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Template"
     }
   }
 }
@@ -962,12 +969,14 @@ Damit steht im Manifest bei **allen** Repos derselbe Tag.
 `main`, Workspace `Ventilsteuerung/4diacIDE-workspace`, Projekt `test`, alle im
 `.lib`-Sync): `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`,
 `4diac-SlurryTanker-sample`, `4diac-SlurryTanker-sample-Hutschienenmoped`, `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`,
-`4diac_modbus_rtu_sample`, `4diac_empty1`, `4diac-frequency-converter-sample-APIXON`
-(dort heißt das Projekt **`FU_Demo`** statt `test`). Die drei SlurryTanker,
-`modbus_rtu` und APIXON sind ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
+`4diac_modbus_rtu_sample`, `4diac_empty1`, `4diac_template`,
+`4diac-frequency-converter-sample-APIXON` (dort heißt das Projekt **`FU_Demo`** statt
+`test`). Damit sind **alle** 4diac-Projekt-Repos der Org drin. Die drei SlurryTanker,
+`modbus_rtu`, `4diac_template` und APIXON sind ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
 
-**Noch nicht aufgenommen** (nicht umgestellt): `4diac_template`. Es kommt ins Manifest,
-sobald es umgestellt ist und im Sync läuft.
+Neue 4diac-Projekt-Repos kommen ins Manifest, sobald sie umgestellt sind und im Sync
+laufen. `--new-project` kopiert weiterhin `4diac_training1_empty`
+(`template_for_new_projects`), nicht `4diac_template`.
 
 Ab `v0.28q` enthält jedes Repo auch `Ventilsteuerung/scripts_central` (Preload,
 Deploy-Basis, `elf_manager_gui.py`) sowie `test/scripts/RunSkript_PreloadELF.bat`,
@@ -1076,6 +1085,7 @@ C:\ms\sl\
 │   ├── 4diac_modbus_rtu_sample\
 │   ├── 4diac_empty1\
 │   ├── 4diac-frequency-converter-sample-APIXON\
+│   ├── 4diac_template\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── installer\            ← Kopie des Installers (siehe 3.3), mit version.txt
 ├── firmware\             ← siehe 2.7
@@ -1161,7 +1171,8 @@ C:\ms\sl\
 - **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
   Org, gleicher Tag wie training1 (2026-11-25, siehe 3.2).
 - **Trainings-Repos im Manifest:** training1, _empty, drei SlurryTanker,
-  EasyExampleCounter, modbus_tcp, modbus_rtu, empty1, APIXON (FU-Demo); ELF-Verwaltung nur einmal auf dem
+  EasyExampleCounter, modbus_tcp, modbus_rtu, empty1, template, APIXON (FU-Demo) – alle
+  4diac-Projekt-Repos der Org; ELF-Verwaltung nur einmal auf dem
   Desktop, je Projekt über die Launches in der IDE (2026-11-26, siehe 3.2).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
