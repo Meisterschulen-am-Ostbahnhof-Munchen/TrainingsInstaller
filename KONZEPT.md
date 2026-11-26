@@ -33,7 +33,7 @@ Installiert bzw. eingerichtet werden:
   | Gerät              | Beschaffung | Admin-Rechte |
   |--------------------|-------------|--------------|
   | Schüler-Notebook   | privat      | **ja** (Pflicht laut Schulvorgabe) |
-  | Lehrer-Notebook    | ❓ dienstlich/verwaltet | **nein** |
+  | Lehrer-Notebook    | dienstlich, verwaltet | **nein** (Ordner unter `C:\` anlegen geht) |
 
   Grundlage für Schüler-Notebooks: [Notebookanforderungen der Schule](https://www.meisterschulen-muenchen.de/documents/meisterschulen/fachbereiche/it-admin/beiblatt_notebookanforderung.pdf)
   (Stand 16.07.2024):
@@ -598,8 +598,9 @@ Sicherungs-Branch wiederherstellbar.
 Die Sicherungsdateien sind nicht versioniert. Beim nächsten `--update` werden Dateien
 `*_sicherung_*.SUB` daher nicht erneut gesichert, sondern einfach liegen gelassen.
 
-❓ Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbedarf).
-Später evtl. `--cleanup`, das alte löscht.
+Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbedarf).
+Sie werden **nie gelöscht** – auch nicht von `--cleanup`: Sie sind das einzige Netz für
+überschriebene `.fbt`, `.sys`, `.gcf` und lokale Commits.
 
 #### 4diac IDE aktualisieren
 
@@ -631,7 +632,22 @@ nächsten `install.cmd` aktualisiert:
    Einstellungen liegen im Projekt und bleiben erhalten.
 
 Die Verknüpfungen zeigen weiter auf `tools\4diac-ide\4diac-ide.exe` und bleiben
-unverändert. ❓ Alte IDE-ZIPs aus `downloads\` löschen (spart ca. 300 MB je Version)?
+unverändert. Die alte IDE-ZIP in `downloads\` wird nach erfolgreichem Update gelöscht
+(siehe „Aufräumen“).
+
+#### Aufräumen (`--cleanup`)
+
+**Automatisch** am Ende jedes erfolgreichen Laufs: Dateien in `downloads\`, die im
+aktuellen Manifest nicht mehr vorkommen (alte IDE-ZIP ca. 300 MB, alte Git-/Python-
+Pakete), werden gelöscht. Was das Manifest noch nennt, bleibt als Cache liegen.
+
+**Auf Wunsch** mit `install.cmd --cleanup` bzw. Knopf „Aufräumen“ in der GUI, zusätzlich:
+- **Logs** in `C:\ms\sl\logs\` älter als 90 Tage löschen.
+- Vorher wird aufgelistet, was gelöscht wird (GUI: Liste mit „Löschen“/„Abbrechen“;
+  headless: Liste im Bericht, gelöscht wird ohne Rückfrage, `--check` zeigt nur an).
+
+Nie angefasst werden Projektdateien, die `.SUB`-Sicherungen (`*_sicherung_*.SUB`), die
+**Sicherungs-Branches** und der Branch `arbeit`.
 
 ### 2.7 Firmware und ELF-Bibliotheken – immer synchron
 
@@ -1041,6 +1057,7 @@ C:\ms\sl\
 - [ ] `--check` – nur prüfen, nichts verändern
 - [ ] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
+- [ ] `--cleanup` – alte Logs löschen; Sicherungs-Branches bleiben (siehe 2.6)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 
@@ -1060,9 +1077,6 @@ C:\ms\sl\
 1. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
 2. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
    Namensprüfung ist festgelegt)
-3. **Lehrer-Notebook:** dienstlich/verwaltet? (siehe 2)
-4. **Aufräumen:** `--cleanup` für alte IDE-ZIPs in `downloads\` (ca. 300 MB je Version)
-   und alte Sicherungs-Branches? (siehe 2.6)
 
 ### Entschieden
 
@@ -1070,6 +1084,11 @@ C:\ms\sl\
 - **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
 - **Versionen im Konzept:** nur Beispiele; verbindlich ist allein das `manifest.json` im
   Installer-Release (2026-11-26, siehe 3.2).
+- **Lehrer-Notebook:** dienstlich verwaltet, keine Admin-Rechte, Ordner unter `C:\`
+  anlegen ist erlaubt → gleicher Weg wie Schüler-Notebooks (2026-11-26).
+- **Aufräumen:** unbenutzte Downloads (alte IDE-ZIP) automatisch löschen; `--cleanup`
+  löscht Logs älter als 90 Tage. Sicherungs-Branches und `.SUB`-Sicherungen werden
+  **nie** gelöscht (2026-11-26, siehe 2.6).
 - **Offline:** Installation online; danach muss alles offline laufen.
 - **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
 - **4diac FORTE:** wird **nicht** installiert (2026-11-13).
