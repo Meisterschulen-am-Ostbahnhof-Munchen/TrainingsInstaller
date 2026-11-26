@@ -479,10 +479,10 @@ Jedes Projekt hat seinen eigenen Workspace; gleiche Projektnamen (`test_AX` …)
 verschiedenen Workspaces stören sich daher nicht. Für Schüler zusätzlich als
 Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
 
-❓ Offen:
-- Was passiert mit dem Git-Remote der Kopie? Nur umbenennen (`origin` → `upstream`)
+**Git-Remote der Kopie (entschieden 2026-11-26):**
+- Nur umbenennen (`origin` → `upstream`)
   genügt **nicht**: Das Branch-Tracking bleibt erhalten, ein einfaches `git push` ginge
-  weiter ans Schul-Repo. Vorschlag: Fetch-URL behalten (Updates der Vorlage holen), aber
+  weiter ans Schul-Repo. Daher: Fetch-URL behalten (Updates der Vorlage holen), aber
   die Push-URL ungültig setzen, damit ein Push mit klarer Fehlermeldung scheitert:
   ```
   git remote rename origin upstream
@@ -1079,15 +1079,12 @@ C:\ms\sl\
 
 ### Offen
 
-1. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
-   Namensprüfung ist festgelegt)
+Derzeit keine.
 
 ### Entschieden
 
 - **Plattform:** Windows only (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
 - **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
-- **Ein Manifest, keine Profile:** jeder bekommt alle Trainings-Repos (2026-11-26,
-  siehe 3.2).
 - **Versionen im Konzept:** nur Beispiele; verbindlich ist allein das `manifest.json` im
   Installer-Release (2026-11-26, siehe 3.2).
 - **Lehrer-Notebook:** dienstlich verwaltet, keine Admin-Rechte, Ordner unter `C:\`
@@ -1119,3 +1116,7 @@ C:\ms\sl\
 - **Verknüpfungen:** Desktop **unbedingt** (plus Startmenü): „4diac Projekte“
   (`C:\ms\sl\prj`), „4diac IDE“ mit Workspace-Auswahl, je Training eine
   IDE-Verknüpfung und „logiBUS ELF-Verwaltung“ (2026-11-26) (siehe 2.5).
+- **Ein Manifest, keine Profile:** jeder bekommt alle Trainings-Repos (2026-11-26,
+  siehe 3.2).
+- **`--new-project` Push-Sperre:** `origin` → `upstream`, Push-URL ungültig, Tracking
+  entfernt; Fetch der Vorlage bleibt möglich (2026-11-26, siehe 2.5).
