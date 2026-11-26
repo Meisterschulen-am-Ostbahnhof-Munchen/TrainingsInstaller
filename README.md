@@ -21,9 +21,10 @@ Konzept und Entscheidungen: [KONZEPT.md](KONZEPT.md).
 install.cmd                 GUI
 install.cmd --headless      installieren ohne Fenster
 install.cmd --check         nur prüfen
+install.cmd --update [REPO] Trainings aktualisieren (geänderte .SUB werden gesichert)
 ```
 
-`--update`, `--new-project`, `--cleanup`, `--uninstall` und `--self-update` folgen.
+`--new-project`, `--cleanup`, `--uninstall` und `--self-update` folgen.
 
 ## Manifest freigeben
 
@@ -41,6 +42,23 @@ von `4diac_training1`, `.lib` in jedem Repo inhaltsgleich mit training1, `firmwa
 Hängt der `.lib`-Sync eines Repos, bleibt die Prüfung rot – dann erst den Sync-PR mergen
 oder das Repo vorübergehend aus dem Manifest nehmen. In CI läuft die Prüfung bei jeder
 Änderung an `manifest.json` (`.github/workflows/manifest-check.yml`).
+
+## Installer veröffentlichen
+
+1. `version.txt` erhöhen (bei neuem Manifest immer – eine Installer-Version = ein Satz
+   Versionen), per PR nach `main`.
+2. Auf `main` taggen: `git tag v<version.txt> && git push origin v<version.txt>`.
+3. `.github/workflows/release.yml` läuft dann:
+   - Freigabe-Prüfung `check_manifest.py --full` und alle Tests – sonst **kein** Release;
+   - `tools/build_release.py` baut `TrainingsInstaller.zip` (Tag muss zu `version.txt`
+     passen) und die Release-Notes mit allen Versionen;
+   - Probestart: ZIP entpacken, `install.cmd --help` (lädt Python, startet den Kern);
+   - GitHub-Release mit `TrainingsInstaller.zip` als einzigem Asset.
+
+Fester Link für Teilnehmer:
+<https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/TrainingsInstaller/releases/latest/download/TrainingsInstaller.zip>
+
+Lokal bauen (ohne Veröffentlichen): `python tools/build_release.py` → `dist/`.
 
 ## Entwicklung
 
