@@ -125,7 +125,9 @@ class App:
                 "Trainings aktualisieren",
                 "Bitte vorher die 4diac IDE schließen.\n\n"
                 "Alle Trainings werden auf den aktuellen Stand gebracht. Deine geänderten Übungen "
-                "(.SUB) bleiben als „…_sicherung_<Datum>.SUB“ daneben erhalten."):
+                "(.SUB) bleiben als „…_sicherung_<Datum>.SUB“ daneben erhalten.\n\n"
+                "Eigene Projekte (aus „Neues Projekt“) bekommen den neuen Stand der Vorlage; "
+                "deine Dateien darin bleiben, vorher wird ein Sicherungs-Branch angelegt."):
             from . import update
             self.start(update.update)
 

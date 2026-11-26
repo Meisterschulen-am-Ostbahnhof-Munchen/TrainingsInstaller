@@ -9,7 +9,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from . import cleanup, firmware, manifest, repos, shortcuts, tools, winsys
+from . import cleanup, firmware, manifest, own_update, repos, shortcuts, tools, winsys
 from .download import DownloadError
 from .paths import Paths
 from .report import Reporter, log
@@ -98,12 +98,17 @@ def install(rep: Reporter, paths: Paths | None = None) -> bool:
     else:
         rep.error("Trainings-Repos übersprungen: Git fehlt")
 
+    own_behind = own_update.behind(paths, m) if paths.git_exe.is_file() else []
+    for name in own_behind:
+        rep.warn(f"{name} (eigenes Projekt): Bibliothek (.lib) nicht auf "
+                 f"{own_update.template(m)[1]['ref']} – aktualisieren mit „Trainings aktualisieren“ (--update)")
     if fw:
-        if behind == []:
+        if behind == [] and not own_behind:
             guarded("Firmware ablegen", firmware.activate, paths, *fw, rep)
         else:
             rep.warn("Neue Firmware liegt in firmware.neu bereit, wird aber erst übernommen, "
-                     "wenn alle Trainings aktualisiert sind (sonst passen die ELFs nicht)")
+                     "wenn alle Trainings und eigenen Projekte aktualisiert sind "
+                     "(sonst passen die ELFs nicht)")
 
     guarded("Workspace-Liste", shortcuts.write_workspace_list, paths, m, rep)
     guarded("Verknüpfungen", shortcuts.apply, paths, m, rep)
@@ -152,6 +157,13 @@ def check(rep: Reporter, paths: Paths | None = None) -> bool:
                 rep.skip(f"{name}: {e['ref']}")
             else:
                 rep.warn(f"{name}: nicht auf {e['ref']}")
+        tpl_ref = own_update.template(m)[1]["ref"]
+        for d in own_update.template_projects(paths, m):
+            if own_update.lib_current(paths, d, m):
+                rep.skip(f"{d.name} (eigenes Projekt): Bibliothek {tpl_ref}")
+            else:
+                rep.warn(f"{d.name} (eigenes Projekt): Vorlage {own_update.base_tag(paths, d)}, "
+                         f"Manifest {tpl_ref} – „Trainings aktualisieren“ (--update)")
     marker = paths.firmware / firmware.MARKER
     if marker.is_file():
         from .download import sha256_file

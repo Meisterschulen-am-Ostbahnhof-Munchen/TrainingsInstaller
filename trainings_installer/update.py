@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import firmware, repos, winsys
+from . import firmware, own_update, repos, winsys
 from .paths import Paths
 from .repos import GitError, git
 from .report import Reporter
@@ -226,7 +226,8 @@ def report_repo(res: RepoResult, rep: Reporter) -> None:
 
 
 def update(rep: Reporter, paths: Paths | None = None, only: str | None = None) -> bool:
-    """--update [<repo>]: Trainings auf die Tags aus dem Manifest bringen, dann Firmware."""
+    """--update [<repo>]: Trainings auf die Tags aus dem Manifest bringen, eigene Projekte
+    auf den neuen Vorlagen-Tag (own_update), dann Firmware."""
     from . import core   # Zyklus vermeiden
 
     paths = paths or Paths.default()
@@ -236,10 +237,13 @@ def update(rep: Reporter, paths: Paths | None = None, only: str | None = None) -
     if not paths.git_exe.is_file():
         rep.error("Git fehlt – bitte zuerst „Installieren / Reparieren“")
         return False
-    if only and only not in m["repos"]:
-        rep.error(f"Unbekanntes Training: {only} (bekannt: {', '.join(m['repos'])})")
+    own = {d.name: d for d in own_update.template_projects(paths, m)}
+    if only and only not in m["repos"] and only not in own:
+        rep.error(f"Unbekanntes Training oder Projekt: {only} "
+                  f"(bekannt: {', '.join([*m['repos'], *own])})")
         return False
-    names = [only] if only else list(m["repos"])
+    names = [only] if only in m["repos"] else ([] if only else list(m["repos"]))
+    own_names = [only] if only in own else ([] if only else list(own))
     fw = None
     try:
         rep.step("Firmware laden")
@@ -258,12 +262,19 @@ def update(rep: Reporter, paths: Paths | None = None, only: str | None = None) -
             report_repo(update_repo(paths, name, m["repos"][name], rep, ts, ides), rep)
         except (UpdateError, GitError, OSError) as e:
             rep.error(str(e))
+    for name in own_names:   # eigene Projekte: Vorlage übernehmen, nichts zurücksetzen
+        rep.step(f"{name} (eigenes Projekt)")
+        try:
+            own_update.report_own(own_update.update_own(paths, own[name], m, ts, ides), rep)
+        except (own_update.OwnUpdateError, GitError, OSError) as e:
+            rep.error(str(e))
     if fw:
         behind = [n for n, e in m["repos"].items()
                   if not repos.at_ref(paths, repos.repo_dir(paths, n), e["ref"])]
+        behind += own_update.behind(paths, m)
         if behind:
-            rep.warn("Neue Firmware bleibt in firmware.neu, bis alle Trainings aktuell sind: "
-                     + ", ".join(behind))
+            rep.warn("Neue Firmware bleibt in firmware.neu, bis alle Trainings und eigenen "
+                     "Projekte aktuell sind: " + ", ".join(behind))
         else:
             firmware.activate(paths, *fw, rep)
     return rep.report.ok

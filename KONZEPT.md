@@ -612,6 +612,27 @@ Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbed
 Sie werden **nie gelöscht** – auch nicht von `--cleanup`: Sie sind das einzige Netz für
 überschriebene `.fbt`, `.sys`, `.gcf` und lokale Commits.
 
+#### Eigene Projekte aktualisieren (entschieden 2026-11-26)
+
+Eigene Projekte (`--new-project`) sind Kopien der leeren Vorlage auf dem damaligen Tag. Ohne
+Update behielten sie die alte `.lib`, während die Firmware schon neu ist – das verletzt 2.7.
+Deshalb nimmt „Trainings aktualisieren“ (`--update`, auch `--update <Projekt>`) alle eigenen
+Projekte mit, deren `upstream` die Vorlage aus dem Manifest ist (`own_update.py`).
+Anders als bei den Trainings gehört hier alles dem Schüler, **nichts wird zurückgesetzt**:
+
+1. Abbruch ohne Änderung, wenn die IDE den Workspace offen hat, das Projekt nicht auf
+   `arbeit` steht oder ein Merge unterbrochen ist
+2. neuen Vorlagen-Tag holen (lokale Vorlage zuerst, sonst `upstream`)
+3. Sicherungs-Branch `sicherung_<Datum>` mit dem kompletten Stand
+4. eigene Änderungen als Commit „Eigener Stand vor Update auf <Tag>“ festhalten
+5. `git merge <Tag>`: eigene Dateien bleiben, Vorlagenänderungen (auch `.lib`) kommen dazu
+6. Konflikt → Merge abbrechen, **nur `<workspace>/.lib`** auf den Tag setzen und committen;
+   die Bibliothek gehört der Vorlage und muss zur Firmware passen
+
+Neue Firmware wird erst übernommen, wenn auch jedes eigene Projekt die `.lib` des
+Vorlagen-Tags hat (gleicher Tree-Hash). „Installieren“ und `--check` nennen eigene Projekte,
+die noch nicht passen.
+
 #### 4diac IDE aktualisieren
 
 Auslöser: Wir erhöhen die IDE-Version in `manifest.json` von Hand (festgedübelt, siehe
