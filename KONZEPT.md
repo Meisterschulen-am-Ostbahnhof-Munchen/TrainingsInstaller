@@ -598,8 +598,9 @@ Sicherungs-Branch wiederherstellbar.
 Die Sicherungsdateien sind nicht versioniert. Beim nächsten `--update` werden Dateien
 `*_sicherung_*.SUB` daher nicht erneut gesichert, sondern einfach liegen gelassen.
 
-Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbedarf);
-alte räumt `--cleanup` weg (siehe „Aufräumen“ unten).
+Sicherungs-Branches sammeln sich an (je Update einer, praktisch ohne Speicherbedarf).
+Sie werden **nie gelöscht** – auch nicht von `--cleanup`: Sie sind das einzige Netz für
+überschriebene `.fbt`, `.sys`, `.gcf` und lokale Commits.
 
 #### 4diac IDE aktualisieren
 
@@ -641,13 +642,12 @@ aktuellen Manifest nicht mehr vorkommen (alte IDE-ZIP ca. 300 MB, alte Git-/Pyth
 Pakete), werden gelöscht. Was das Manifest noch nennt, bleibt als Cache liegen.
 
 **Auf Wunsch** mit `install.cmd --cleanup` bzw. Knopf „Aufräumen“ in der GUI, zusätzlich:
-- **Sicherungs-Branches** älter als 90 Tage löschen – je Repo bleibt der **neueste immer**
-  erhalten, egal wie alt.
 - **Logs** in `C:\ms\sl\logs\` älter als 90 Tage löschen.
 - Vorher wird aufgelistet, was gelöscht wird (GUI: Liste mit „Löschen“/„Abbrechen“;
   headless: Liste im Bericht, gelöscht wird ohne Rückfrage, `--check` zeigt nur an).
 
-Nie angefasst werden Projektdateien, `.SUB`-Sicherungen und der Branch `arbeit`.
+Nie angefasst werden Projektdateien, die `.SUB`-Sicherungen (`*_sicherung_*.SUB`), die
+**Sicherungs-Branches** und der Branch `arbeit`.
 
 ### 2.7 Firmware und ELF-Bibliotheken – immer synchron
 
@@ -1048,7 +1048,7 @@ C:\ms\sl\
 - [ ] `--check` – nur prüfen, nichts verändern
 - [ ] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
-- [ ] `--cleanup` – alte Sicherungs-Branches und Logs löschen (siehe 2.6)
+- [ ] `--cleanup` – alte Logs löschen; Sicherungs-Branches bleiben (siehe 2.6)
 - [ ] `--uninstall` – alles wieder entfernen
 - [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 
@@ -1075,9 +1075,9 @@ C:\ms\sl\
 - **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
 - **Lehrer-Notebook:** dienstlich verwaltet, keine Admin-Rechte, Ordner unter `C:\`
   anlegen ist erlaubt → gleicher Weg wie Schüler-Notebooks (2026-11-26).
-- **Aufräumen:** unbenutzte Downloads automatisch löschen; `--cleanup` löscht
-  Sicherungs-Branches (neuester je Repo bleibt) und Logs älter als 90 Tage (2026-11-26,
-  siehe 2.6).
+- **Aufräumen:** unbenutzte Downloads (alte IDE-ZIP) automatisch löschen; `--cleanup`
+  löscht Logs älter als 90 Tage. Sicherungs-Branches und `.SUB`-Sicherungen werden
+  **nie** gelöscht (2026-11-26, siehe 2.6).
 - **Offline:** Installation online; danach muss alles offline laufen.
 - **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
 - **4diac FORTE:** wird **nicht** installiert (2026-11-13).
