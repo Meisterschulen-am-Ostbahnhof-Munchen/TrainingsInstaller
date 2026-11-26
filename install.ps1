@@ -93,8 +93,17 @@ if ($hereFull -ne $instFull) {
         if (Test-Path $src) { Copy-Item -Path $src -Destination $tmp -Recurse -Force }
     }
     Get-ChildItem -Path $tmp -Recurse -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force
-    if (Test-Path $Installer) { Remove-Item $Installer -Recurse -Force }
+    # Wie beim Selbst-Update: erst umbenennen (scheitert sauber, wenn gesperrt), nie halb loeschen
+    $Alt = Join-Path $Root 'installer.alt'
+    if (Test-Path $Alt) { Remove-Item $Alt -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $Installer) {
+        try { Rename-Item -Path $Installer -NewName 'installer.alt' -ErrorAction Stop }
+        catch { Remove-Item $tmp -Recurse -Force; Fail "$Installer ist gesperrt (Installer oder ein Fenster in diesem Ordner noch offen?) - bitte schliessen und erneut starten" }
+    }
     Rename-Item -Path $tmp -NewName 'installer'
+    Remove-Item $Alt -Recurse -Force -ErrorAction SilentlyContinue
+    # ausdruecklich aus dem ZIP gestartet: diese Version gilt, ein wartendes Selbst-Update nicht mehr
+    if (Test-Path $Neu) { Remove-Item $Neu -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 # 4. Python pruefen bzw. laden

@@ -49,8 +49,6 @@ class App:
         ]
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
-        self.close_when_done = False
-        self.restart_when_done = False
 
         self.progress = ttk.Progressbar(root, mode="determinate")
         self.progress.pack(fill="x", padx=10, pady=8)
@@ -90,8 +88,7 @@ class App:
                 "Der Installer startet danach neu. Deine Projekte werden dabei nicht verändert."):
             self.write("info", f"Neue Installer-Version {rel.version} nicht installiert")
             return
-        self.restart_when_done = True
-        self.start(lambda rep, paths: selfupdate.self_update(rep, paths, rel))
+        self.start(lambda rep, paths: selfupdate.self_update(rep, paths, rel), kind="self_update")
 
     def write(self, level: str, msg: str) -> None:
         self.text.configure(state="normal")
@@ -121,10 +118,10 @@ class App:
             if answer is None:
                 return
             remove_projects = not answer
-        self.close_when_done = True
         self.start(lambda rep, paths: uninstall.uninstall(rep, paths, remove_projects),
                    done_text="Deinstalliert. Das Fenster wird jetzt geschlossen."
-                   + ("" if remove_projects is not False else f"\n\nDie Projekte liegen weiter in {self.paths.prj}."))
+                   + ("" if remove_projects is not False else f"\n\nDie Projekte liegen weiter in {self.paths.prj}."),
+                   kind="uninstall")
 
     def ask_cleanup(self) -> None:
         from . import cleanup
@@ -173,7 +170,8 @@ class App:
                    done_text="Fertig.\n\nDas Projekt startest du mit der Verknüpfung "
                              f"„4diac – {name}“ auf dem Desktop.")
 
-    def start(self, fn, done_text: str = "") -> None:
+    def start(self, fn, done_text: str = "", kind: str = "") -> None:
+        """kind kommt mit der Fertig-Meldung zurück – Neustart/Schließen gilt nur für genau diesen Lauf."""
         if self.worker and self.worker.is_alive():
             return
         self.done_text = done_text
@@ -189,7 +187,7 @@ class App:
             except Exception as e:   # noqa: BLE001 – alles anzeigen, nichts verschlucken
                 rep.error(f"Unerwarteter Fehler: {e}")
                 ok = False
-            self.q.put(("finished", ok, rep.report.text()))
+            self.q.put(("finished", ok, rep.report.text(), kind))
 
         self.worker = threading.Thread(target=run, daemon=True)
         self.worker.start()
@@ -207,17 +205,16 @@ class App:
                 elif item[0] == "update":
                     self.offer_self_update(item[1])
                 elif item[0] == "finished":
-                    self.finished(item[1], item[2])
+                    self.finished(item[1], item[2], item[3])
         except queue.Empty:
             pass
         self.root.after(100, self.poll)
 
-    def finished(self, ok: bool, summary: str) -> None:
+    def finished(self, ok: bool, summary: str, kind: str = "") -> None:
         for b in self.buttons:
             b.configure(state="normal")
         self.write("step", "\n" + summary)
-        if self.restart_when_done:
-            self.restart_when_done = False
+        if kind == "self_update":
             if ok:
                 from . import selfupdate
                 messagebox.showinfo("Fertig", "Die neue Version ist geladen. Der Installer startet "
@@ -231,8 +228,7 @@ class App:
                                 or "Fertig.\n\nDie 4diac-Verknüpfungen liegen auf dem Desktop.")
         else:
             messagebox.showerror("Fehler", f"Es gab Fehler – Details oben und im Log:\n{self.logfile}")
-        if self.close_when_done:
-            self.close_when_done = False
+        if kind == "uninstall":
             if ok:   # Installer wird nach dem Beenden entfernt – Fenster schließen
                 self.root.destroy()
 
