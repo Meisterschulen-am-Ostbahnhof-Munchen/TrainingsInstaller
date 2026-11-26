@@ -28,9 +28,12 @@ Neues Projekt.cmd           dasselbe per Doppelklick, fragt nur nach dem Namen
 install.cmd --cleanup       alte Downloads und Logs > 90 Tage löschen (Sicherungen bleiben)
 install.cmd --uninstall     alles entfernen; prj nur ohne Schülerarbeit
 install.cmd --uninstall --mit-projekten   auch prj samt Schülerarbeit löschen
+install.cmd --self-update   Installer auf das neueste GitHub-Release bringen
 ```
 
-`--self-update` folgt.
+Beim Start fragt der Installer `releases/latest` ab (ohne Login, offline wird still
+weitergemacht). Die GUI bietet eine neuere Version per Ja/Nein an und startet danach neu,
+in der Konsole erscheint nur ein Hinweis.
 
 ## Manifest freigeben
 

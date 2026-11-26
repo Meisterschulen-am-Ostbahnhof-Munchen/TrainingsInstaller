@@ -187,7 +187,8 @@ def uninstall(rep: Reporter, paths: Paths | None = None, remove_projects: bool |
 
     rep.step("Ordner löschen")
     now = [paths.firmware, paths.firmware.with_name("firmware.neu"), paths.downloads,
-           paths.root / "installer.neu", paths.root / "installer.tmp"]
+           paths.root / "installer.neu", paths.root / "installer.neu.tmp",
+           paths.root / "installer.alt", paths.root / "installer.tmp"]
     now += [p for p in paths.tools.iterdir() if p != paths.python] if paths.tools.is_dir() else []
     if remove_projects:
         now.append(paths.prj)

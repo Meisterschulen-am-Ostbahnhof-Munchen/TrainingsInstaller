@@ -2,7 +2,8 @@
 #
 # Laedt NUR Python. Alles andere erledigt der Python-Hauptinstaller (trainings_installer).
 #   - legt C:\ms\sl an und prueft das Schreibrecht
-#   - uebernimmt ein per Selbst-Update vorbereitetes installer.neu
+#   - uebernimmt ein per Selbst-Update vorbereitetes installer.neu (beim Start und direkt
+#     nach einem Konsolenlauf mit --self-update)
 #   - kopiert sich nach C:\ms\sl\installer (wenn von woanders gestartet, z. B. aus dem ZIP)
 #   - prueft tools\python\.ms-sl-version gegen manifest.json, laedt Python nur bei Abweichung
 #   - startet ohne Argumente die GUI (pythonw), mit Argumenten die Konsole (python)
@@ -47,13 +48,38 @@ try {
 try { Get-ChildItem -Path $Here -Recurse -File | Unblock-File } catch { }
 
 Set-Location $Root   # nie im Ordner stehen, der gleich ersetzt wird
+[Environment]::CurrentDirectory = $Root   # auch das Prozess-Verzeichnis (Verknuepfung startet in installer)
 
 # 2. Selbst-Update abschliessen: installer.neu -> installer
-if (Test-Path (Join-Path $Neu 'version.txt')) {
+#    Erst umbenennen (scheitert sauber, solange etwas gesperrt ist), nie halb loeschen.
+#    Klappt es nicht, laeuft die bisherige Version weiter und installer.neu bleibt fuer
+#    den naechsten Start liegen.
+function Complete-SelfUpdate {
+    if (-not (Test-Path (Join-Path $Neu 'version.txt'))) { return }
+    if ($env:MS_SL_WAIT_PID) {   # Neustart aus der GUI: warten, bis der alte Installer beendet ist
+        try { Wait-Process -Id ([int]$env:MS_SL_WAIT_PID) -Timeout 120 -ErrorAction Stop } catch { }
+    }
     Write-Host 'Neue Installer-Version wird uebernommen ...'
-    if (Test-Path $Installer) { Remove-Item $Installer -Recurse -Force }
-    Rename-Item -Path $Neu -NewName 'installer'
+    $Alt = Join-Path $Root 'installer.alt'
+    if (Test-Path $Alt) { Remove-Item $Alt -Recurse -Force -ErrorAction SilentlyContinue }
+    $moved = -not (Test-Path $Installer)
+    for ($i = 0; -not $moved -and $i -lt 10; $i++) {
+        try { Rename-Item -Path $Installer -NewName 'installer.alt' -ErrorAction Stop; $moved = $true }
+        catch { Start-Sleep -Seconds 1 }
+    }
+    if ($moved) {
+        try {
+            Rename-Item -Path $Neu -NewName 'installer' -ErrorAction Stop
+            Remove-Item $Alt -Recurse -Force -ErrorAction SilentlyContinue
+        } catch {
+            if ((Test-Path $Alt) -and -not (Test-Path $Installer)) { Rename-Item -Path $Alt -NewName 'installer' }
+            Write-Host "Hinweis: neue Version nicht uebernommen ($($_.Exception.Message)) - bisherige laeuft weiter" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Hinweis: $Installer ist gesperrt (offenes Fenster in diesem Ordner?) - neue Version wird beim naechsten Start uebernommen" -ForegroundColor Yellow
+    }
 }
+Complete-SelfUpdate
 
 # 3. Sich selbst nach C:\ms\sl\installer kopieren (beim Start aus dem ZIP / vom USB-Stick)
 $hereFull = (Resolve-Path $Here).Path.TrimEnd('\')
@@ -115,4 +141,8 @@ if ($args.Count -eq 0) {
 }
 Set-Location $Installer
 & (Join-Path $PyDir 'python.exe') -m trainings_installer @args
-exit $LASTEXITCODE
+$code = $LASTEXITCODE
+Set-Location $Root
+[Environment]::CurrentDirectory = $Root
+Complete-SelfUpdate   # --self-update in der Konsole: gleich uebernehmen
+exit $code

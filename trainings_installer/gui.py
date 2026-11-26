@@ -50,6 +50,7 @@ class App:
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
         self.close_when_done = False
+        self.restart_when_done = False
 
         self.progress = ttk.Progressbar(root, mode="determinate")
         self.progress.pack(fill="x", padx=10, pady=8)
@@ -67,6 +68,30 @@ class App:
         self.write("info", f"Log: {self.logfile}")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         root.after(100, self.poll)
+        threading.Thread(target=self.check_self_update, daemon=True).start()
+
+    def check_self_update(self) -> None:
+        """Im Hintergrund: offline oder Fehler → einfach weiter (KONZEPT.md 3.3)."""
+        from . import selfupdate
+        rel = selfupdate.newer_release(core.installer_version())
+        if rel:
+            self.q.put(("update", rel))
+
+    def offer_self_update(self, rel) -> None:
+        from . import selfupdate
+        if self.worker and self.worker.is_alive():
+            self.write("warning", f"Neue Installer-Version {rel.version} verfügbar – "
+                                  "nach diesem Lauf den Installer neu starten")
+            return
+        if not messagebox.askyesno(
+                "Neue Version",
+                f"Neue Version {rel.version} des Trainings-Installers verfügbar "
+                f"(installiert: {core.installer_version()}).\n\nJetzt aktualisieren?\n\n"
+                "Der Installer startet danach neu. Deine Projekte werden dabei nicht verändert."):
+            self.write("info", f"Neue Installer-Version {rel.version} nicht installiert")
+            return
+        self.restart_when_done = True
+        self.start(lambda rep, paths: selfupdate.self_update(rep, paths, rel))
 
     def write(self, level: str, msg: str) -> None:
         self.text.configure(state="normal")
@@ -179,6 +204,8 @@ class App:
                     done, total = item[1], item[2]
                     if total:
                         self.progress.configure(maximum=total, value=done)
+                elif item[0] == "update":
+                    self.offer_self_update(item[1])
                 elif item[0] == "finished":
                     self.finished(item[1], item[2])
         except queue.Empty:
@@ -189,6 +216,16 @@ class App:
         for b in self.buttons:
             b.configure(state="normal")
         self.write("step", "\n" + summary)
+        if self.restart_when_done:
+            self.restart_when_done = False
+            if ok:
+                from . import selfupdate
+                messagebox.showinfo("Fertig", "Die neue Version ist geladen. Der Installer startet "
+                                    "jetzt neu.\n\nDanach bitte „Installieren / Reparieren“ wählen, "
+                                    "damit auch die Trainings den neuen Stand bekommen.")
+                selfupdate.restart(self.paths)   # wartet, bis dieses Fenster zu ist
+                self.root.destroy()
+                return
         if ok:
             messagebox.showinfo("Fertig", self.done_text
                                 or "Fertig.\n\nDie 4diac-Verknüpfungen liegen auf dem Desktop.")
@@ -196,6 +233,7 @@ class App:
             messagebox.showerror("Fehler", f"Es gab Fehler – Details oben und im Log:\n{self.logfile}")
         if self.close_when_done:
             self.close_when_done = False
+        self.restart_when_done = False
             if ok:   # Installer wird nach dem Beenden entfernt – Fenster schließen
                 self.root.destroy()
 
