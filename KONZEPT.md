@@ -486,10 +486,10 @@ Jedes Projekt hat seinen eigenen Workspace; gleiche Projektnamen (`test_AX` …)
 verschiedenen Workspaces stören sich daher nicht. Für Schüler zusätzlich als
 Doppelklick-Datei `Neues Projekt.cmd`, die nur nach dem Namen fragt.
 
-❓ Offen:
-- Was passiert mit dem Git-Remote der Kopie? Nur umbenennen (`origin` → `upstream`)
+**Git-Remote der Kopie (entschieden 2026-11-26):**
+- Nur umbenennen (`origin` → `upstream`)
   genügt **nicht**: Das Branch-Tracking bleibt erhalten, ein einfaches `git push` ginge
-  weiter ans Schul-Repo. Vorschlag: Fetch-URL behalten (Updates der Vorlage holen), aber
+  weiter ans Schul-Repo. Daher: Fetch-URL behalten (Updates der Vorlage holen), aber
   die Push-URL ungültig setzen, damit ein Push mit klarer Fehlermeldung scheitert:
   ```
   git remote rename origin upstream
@@ -993,10 +993,15 @@ ist der Ordner unter `C:\ms\sl\`.
 `tool_shortcuts`: Python-Werkzeuge aus dem Repo, die eine eigene Verknüpfung bekommen
 (gestartet mit `pythonw.exe`, Pfade relativ zum Repo-Ordner, siehe 2.5).
 
-Vorteile: neue Schulung = neues Manifest; Versionen werden festgenagelt; Prüfsummen
-sichern die Downloads ab.
+Vorteile: neue Schulung = neues Repo im Manifest; Versionen werden festgenagelt;
+Prüfsummen sichern die Downloads ab.
 
-❓ Ein Manifest pro Schulung (Profile, z. B. `--profile grundkurs`)?
+**Ein Manifest für alle Schulungen, keine Profile.** Jeder bekommt alle Trainings-Repos.
+Gründe: IDE, Firmware, Git und Python braucht ohnehin jeder (das ist fast der ganze
+Download); alle Repos tragen denselben Tag und passen zur selben Firmware; kein falsch
+gewähltes Profil, nur ein Satz Versionen zu testen; wer später einen anderen Kurs
+besucht, hat schon alles. Falls die Zahl der Repos einmal stört: Feld `"optional": true`
+je Repo (Häkchen in der GUI, headless `--repo <name>`) – vorgemerkt, nicht gebaut.
 
 ### 3.3 Verteilung, Manifest und Selbst-Update
 
@@ -1140,9 +1145,7 @@ C:\ms\sl\
 
 ### Offen
 
-1. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
-2. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
-   Namensprüfung ist festgelegt)
+Derzeit keine.
 
 ### Entschieden
 
@@ -1181,3 +1184,7 @@ C:\ms\sl\
 - **Verknüpfungen:** Desktop **unbedingt** (plus Startmenü): „4diac Projekte“
   (`C:\ms\sl\prj`), „4diac IDE“ mit Workspace-Auswahl, je Training eine
   IDE-Verknüpfung und „logiBUS ELF-Verwaltung“ (2026-11-26) (siehe 2.5).
+- **Ein Manifest, keine Profile:** jeder bekommt alle Trainings-Repos (2026-11-26,
+  siehe 3.2).
+- **`--new-project` Push-Sperre:** `origin` → `upstream`, Push-URL ungültig, Tracking
+  entfernt; Fetch der Vorlage bleibt möglich (2026-11-26, siehe 2.5).
