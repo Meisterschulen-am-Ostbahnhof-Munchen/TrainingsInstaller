@@ -21,7 +21,7 @@ Installiert bzw. eingerichtet werden:
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
 | logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **ein Build** aus einem Release von `4diac_training1` (welcher: `manifest.json`) – festgedübelt (siehe 2.7) |
-| Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
+| Trainings-Repos | `4diac_training1`, `4diac_training1_empty` und alle umgestellten Beispiel-Projekte (SlurryTanker, EasyExampleCounter, Modbus …; Liste in 3.2) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
 | weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
 ## 2. Rahmenbedingungen
@@ -294,8 +294,15 @@ geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace`
 |---|---|
 | Training 1 | `C:\ms\sl\prj\4diac_training1\Ventilsteuerung\4diacIDE-workspace` |
 | Training 1 (leer) | `C:\ms\sl\prj\4diac_training1_empty\Ventilsteuerung\4diacIDE-workspace` |
-| Slurry Tanker | `C:\ms\sl\prj\4diac-SlurryTanker_AX-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Slurry Tanker AX | `C:\ms\sl\prj\4diac-SlurryTanker_AX-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Slurry Tanker | `C:\ms\sl\prj\4diac-SlurryTanker-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Slurry Tanker Hutschienenmoped | `C:\ms\sl\prj\4diac-SlurryTanker-sample-Hutschienenmoped\Ventilsteuerung\4diacIDE-workspace` |
 | Easy Example Counter | `C:\ms\sl\prj\4diac_EasyExampleCounter\Ventilsteuerung\4diacIDE-workspace` |
+| Modbus TCP | `C:\ms\sl\prj\4diac_modbus_tcp_sample\Ventilsteuerung\4diacIDE-workspace` |
+| Modbus RTU | `C:\ms\sl\prj\4diac_modbus_rtu_sample\Ventilsteuerung\4diacIDE-workspace` |
+| Empty 1 | `C:\ms\sl\prj\4diac_empty1\Ventilsteuerung\4diacIDE-workspace` |
+| FU-Demo (APIXON) | `C:\ms\sl\prj\4diac-frequency-converter-sample-APIXON\Ventilsteuerung\4diacIDE-workspace` |
+| Template | `C:\ms\sl\prj\4diac_template\Ventilsteuerung\4diacIDE-workspace` |
 | usw. | `C:\ms\sl\prj\<repo>\Ventilsteuerung\4diacIDE-workspace` |
 
 Die Projekte (z. B. `test_AX`, `test_B`, `test_VV`) liegen direkt im Workspace-Ordner.
@@ -363,7 +370,7 @@ ist für Schüler der schnellste Einstieg. Der Installer legt dort an:
 |---|---|
 | „4diac Projekte“ | Ordner `C:\ms\sl\prj` (öffnet den Explorer) |
 | „4diac IDE“ | 4diac IDE mit Workspace-Auswahl (siehe unten) |
-| „4diac – Training 1“, „4diac – Slurry Tanker“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
+| „4diac – Training 1“, „4diac – Slurry Tanker AX“ … (je Training und je `--new-project`) | 4diac IDE mit dem Workspace des Trainings (siehe unten) |
 | „logiBUS ELF-Verwaltung“ | grafische ELF-Verwaltung aus `4diac_training1` (siehe unten) |
 
 Zusätzlich **„4diac IDE“** (Desktop + Startmenü) ohne festen Workspace: Sie zeigt beim
@@ -727,8 +734,7 @@ Die Target-Liste kommt aus `firmware.json`, nicht aus dem Code des Installers.
 **Synchron-Prüfung durch den Installer** (vor jedem Download/Update, sonst Abbruch):
 - `firmware.json` → `training1` muss gleich dem `ref` von `4diac_training1` im Manifest
   sein; `4diac_training1_empty` hat denselben Tag (siehe 3.2).
-- Jedes weitere Trainings-Repo muss zum selben Stand gehören (siehe Offene Frage
-  SlurryTanker/EasyExampleCounter, 7).
+- Jedes weitere Trainings-Repo muss denselben Tag tragen (`.lib`-Sync, siehe 3.2).
 - Optional (`--check`): für jede Bibliothek aus `LIB_VERSIONS`
   (`Ventilsteuerung/scripts_central/elf_libs_manifest_lib.py`) den `ELFLIB`-String der
   ELF lesen und `forte_abi`/`arch` mit `firmware.json` vergleichen. **Nicht** alle Dateien
@@ -858,15 +864,15 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
     "target": "tools/4diac-ide/dropins"
   },
   "firmware": {
-    "build": "v0.27-alpha-b-190-ge9b19d5f",
-    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28m/firmware.json",
-    "sha256": "54ce88c5f4ab14215d4083b799090c2eba4035246d8731a42cecfa9146458fa1",
+    "build": "v0.27-alpha-b-228-g…",
+    "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1/releases/download/v0.28q/firmware.json",
+    "sha256": "<SHA256 der firmware.json>",
     "target": "firmware"
   },
   "repos": {
     "4diac_training1": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1.git",
-      "ref": "v0.28m",
+      "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1",
       "tool_shortcuts": [
@@ -879,22 +885,64 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
     },
     "4diac_training1_empty": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_training1_empty.git",
-      "ref": "v0.28m",
+      "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Training 1 (leer)",
       "template_for_new_projects": true
     },
     "4diac-SlurryTanker_AX-sample": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker_AX-sample.git",
-      "ref": "<v0.28m nach Migration + .lib-Sync>",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Slurry Tanker AX"
+    },
+    "4diac-SlurryTanker-sample": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker-sample.git",
+      "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
+    "4diac-SlurryTanker-sample-Hutschienenmoped": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker-sample-Hutschienenmoped.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Slurry Tanker Hutschienenmoped"
+    },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
-      "ref": "<v0.28m nach .lib-Sync>",
+      "ref": "v0.28q",
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Easy Example Counter"
+    },
+    "4diac_modbus_tcp_sample": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_modbus_tcp_sample.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Modbus TCP"
+    },
+    "4diac_modbus_rtu_sample": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_modbus_rtu_sample.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Modbus RTU"
+    },
+    "4diac_empty1": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_empty1.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Empty 1"
+    },
+    "4diac-frequency-converter-sample-APIXON": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-frequency-converter-sample-APIXON.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – FU-Demo (APIXON)"
+    },
+    "4diac_template": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_template.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Template"
     }
   }
 }
@@ -917,15 +965,26 @@ Bei jedem training1-Release ersetzt ein CI-Workflow in training1 (`sync_lib.py`)
 Tags, je Repo als PR; nach dem Merge bekommt das Repo **denselben Tag wie training1**.
 Damit steht im Manifest bei **allen** Repos derselbe Tag.
 
-Stand 2026-11-26 (nur zur Einordnung, wird nicht nachgezogen):
-- erste Sync-Runde: `4diac_modbus_tcp_sample`, `4diac_empty1` und
-  `4diac_training1_empty` tragen bereits denselben Tag wie training1 (`v0.28p`).
-  `4diac_EasyExampleCounter` braucht vorher eine Handkorrektur (2 Typen gibt es in der
-  neuen `.lib` nicht mehr, 3 Typen doppelt in Projekt und `.lib`).
-- `4diac-SlurryTanker_AX-sample` (`.metadata` inzwischen entfernt) ist noch im **alten
-  Stil ohne Paketnamen** (vor IDE 3.x) und muss erst in der IDE 3.x migriert werden –
-  bis dahin passt es weder zur IDE 3.4 (ohne `typelibrary`) noch zur Firmware.
-  Gleiches gilt für die übrigen alten 4diac-Repos der Org.
+**Aufgenommen** (Stand 2026-11-26, alle auf IDE 3.x mit `.lib` im Workspace, Branch
+`main`, Workspace `Ventilsteuerung/4diacIDE-workspace`, Projekt `test`, alle im
+`.lib`-Sync): `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`,
+`4diac-SlurryTanker-sample`, `4diac-SlurryTanker-sample-Hutschienenmoped`, `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`,
+`4diac_modbus_rtu_sample`, `4diac_empty1`, `4diac_template`,
+`4diac-frequency-converter-sample-APIXON` (dort heißt das Projekt **`FU_Demo`** statt
+`test`). Damit sind **alle** 4diac-Projekt-Repos der Org drin. Die drei SlurryTanker,
+`modbus_rtu`, `4diac_template` und APIXON sind ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
+
+Neue 4diac-Projekt-Repos kommen ins Manifest, sobald sie umgestellt sind und im Sync
+laufen. `--new-project` kopiert weiterhin `4diac_training1_empty`
+(`template_for_new_projects`), nicht `4diac_template`.
+
+Ab `v0.28q` enthält jedes Repo auch `Ventilsteuerung/scripts_central` (Preload,
+Deploy-Basis, `elf_manager_gui.py`) sowie `test/scripts/RunSkript_PreloadELF.bat`,
+`RunSkript_ElfManager.bat` und passende Launches in `test/Launches` (bei APIXON
+`FU_Demo/scripts` und `FU_Demo/Launches`) – die ELF-Verwaltung
+ist damit **in jedem Projekt aus der IDE heraus** startbar. Auf dem Desktop gibt es
+trotzdem nur **eine** Verknüpfung „logiBUS ELF-Verwaltung“ (aus training1): Alle Repos
+tragen denselben Tag, ihre ELFs sind identisch – Verknüpfungen je Projekt wären Dubletten.
 
 `firmware`: zeigt auf die `firmware.json` am training1-Release (siehe 2.7); `target`
 ist der Ordner unter `C:\ms\sl\`.
@@ -1019,7 +1078,14 @@ C:\ms\sl\
 │   │       └── 4diacIDE-workspace\   ← Workspace für Training 1 (-data)
 │   ├── 4diac_training1_empty\
 │   ├── 4diac-SlurryTanker_AX-sample\
+│   ├── 4diac-SlurryTanker-sample\
+│   ├── 4diac-SlurryTanker-sample-Hutschienenmoped\
 │   ├── 4diac_EasyExampleCounter\
+│   ├── 4diac_modbus_tcp_sample\
+│   ├── 4diac_modbus_rtu_sample\
+│   ├── 4diac_empty1\
+│   ├── 4diac-frequency-converter-sample-APIXON\
+│   ├── 4diac_template\
 │   └── <eigenes Projekt>\  ← per --new-project aus _empty
 ├── installer\            ← Kopie des Installers (siehe 3.3), mit version.txt
 ├── firmware\             ← siehe 2.7
@@ -1103,9 +1169,11 @@ C:\ms\sl\
   Manifest liegt im ZIP (eine Installer-Version = ein Satz Versionen); Selbst-Update über
   die GitHub-API mit Nachfrage in der GUI (2026-11-26, siehe 3.3).
 - **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
-  Org, gleicher Tag wie training1; erste Runde EasyExampleCounter, modbus_tcp, empty1;
-  SlurryTanker_AX und alte Projekte erst nach Migration (Franz, von Hand) (2026-11-25,
-  siehe 3.2).
+  Org, gleicher Tag wie training1 (2026-11-25, siehe 3.2).
+- **Trainings-Repos im Manifest:** training1, _empty, drei SlurryTanker,
+  EasyExampleCounter, modbus_tcp, modbus_rtu, empty1, template, APIXON (FU-Demo) – alle
+  4diac-Projekt-Repos der Org; ELF-Verwaltung nur einmal auf dem
+  Desktop, je Projekt über die Launches in der IDE (2026-11-26, siehe 3.2).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
   (2026-11-17, siehe 3.2).
 - **Weitere Komponenten:** **keine** – kein VS Code, kein Wireshark, keine Treiber;
