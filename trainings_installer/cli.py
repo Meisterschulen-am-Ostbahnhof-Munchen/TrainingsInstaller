@@ -8,7 +8,7 @@ from . import core
 from .paths import Paths
 from .report import Reporter, setup_logging
 
-COMING = ("uninstall", "self_update")
+COMING = ("self_update",)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,14 +23,19 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--new-project", nargs="?", const="", metavar="NAME",
                    help="neues eigenes Projekt als Kopie der leeren Vorlage (ohne NAME: wird abgefragt)")
     g.add_argument("--cleanup", action="store_true", help="alte Downloads und Logs älter als 90 Tage löschen (Sicherungen bleiben)")
-    g.add_argument("--uninstall", action="store_true", help="alles entfernen (folgt)")
+    g.add_argument("--uninstall", action="store_true", help=r"alles entfernen; C:\ms\sl\prj nur, wenn dort keine Schülerarbeit liegt")
     g.add_argument("--self-update", action="store_true", help="Installer aktualisieren (folgt)")
     g.add_argument("--gui", action="store_true", help="grafische Oberfläche")
+    p.add_argument("--mit-projekten", action="store_true",
+                   help=r"mit --uninstall: auch C:\ms\sl\prj samt Schülerarbeit löschen")
     return p
 
 
 def main(argv: list[str]) -> int:
     args = build_parser().parse_args(argv)
+    if args.mit_projekten and not args.uninstall:
+        print("--mit-projekten gibt es nur zusammen mit --uninstall.")
+        return 2
     if args.gui:
         from . import gui
         return gui.main()
@@ -52,6 +57,9 @@ def main(argv: list[str]) -> int:
     rep = Reporter()
     if args.check:
         ok = core.check(rep, paths)
+    elif args.uninstall:
+        from . import uninstall
+        ok = uninstall.uninstall(rep, paths, True if args.mit_projekten else None)
     elif args.cleanup:
         from . import cleanup
         ok = cleanup.cleanup(rep, paths)

@@ -67,6 +67,23 @@ def update_user_path(add: list[str]) -> bool:
     return True
 
 
+def remove_user_path(remove: list[str]) -> bool:
+    """Eigene Einträge aus dem Benutzer-PATH entfernen (Rohwert, REG_EXPAND_SZ)."""
+    import winreg
+
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+        try:
+            raw, _typ = winreg.QueryValueEx(key, "Path")
+        except FileNotFoundError:
+            return False
+        new = remove_from_path(raw, remove)
+        if new == raw:
+            return False
+        winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new)
+    broadcast_environment_change()
+    return True
+
+
 def broadcast_environment_change() -> None:
     HWND_BROADCAST, WM_SETTINGCHANGE, SMTO_ABORTIFHUNG = 0xFFFF, 0x1A, 0x2
     result = ctypes.c_size_t()
@@ -101,13 +118,20 @@ def new_terminal_lookup(name: str) -> str | None:
 
 # ------------------------------------------------------------- IDE geöffnet? (2.5)
 
-def running_ides(tools_dir: Path) -> list[dict]:
-    """4diac-ide.exe-Prozesse, deren Programm unter tools_dir liegt."""
+def running_ides(tools_dir: Path, strict: bool = False) -> list[dict]:
+    """4diac-ide.exe-Prozesse, deren Programm unter tools_dir liegt.
+
+    strict=True: schlägt die Abfrage fehl, RuntimeError statt „keine IDE“ (für --uninstall).
+    """
     if not IS_WINDOWS:
         return []
     r = powershell("Get-CimInstance Win32_Process -Filter \"Name='4diac-ide.exe'\" | "
                    "Select-Object ExecutablePath, CommandLine | ConvertTo-Json -Compress")
-    if r.returncode != 0 or not r.stdout.strip():
+    if r.returncode != 0:
+        if strict:
+            raise RuntimeError(f"Prozessabfrage fehlgeschlagen: {(r.stderr or '').strip()[:200]}")
+        return []
+    if not r.stdout.strip():
         return []
     data = json.loads(r.stdout)
     procs = data if isinstance(data, list) else [data]

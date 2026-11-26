@@ -1139,7 +1139,16 @@ C:\ms\sl\
   (siehe 2.6; ersetzt das frühere `--reset-training`)
 - [x] `--cleanup` – alte Downloads und Logs älter als 90 Tage löschen; Sicherungs-Branches
   und `_sicherung_`-Dateien bleiben (siehe 2.6; GUI-Knopf „Aufräumen“ mit Liste vorab)
-- [ ] `--uninstall` – alles wieder entfernen
+- [x] `--uninstall` – alles wieder entfernen (entschieden 2026-11-26):
+  - entfernt eigene Verknüpfungen (nur aus `shortcuts.json`), eigene PATH-Einträge, `tools\`,
+    `firmware\`, `downloads\`, `logs\`, `installer\`; Python und Installer laufen dabei
+    selbst und werden von einem kleinen Skript direkt nach dem Beenden gelöscht
+  - **`prj\` nur ohne Schülerarbeit.** Geprüft werden eigene Projekte, geänderte oder neue
+    Dateien (auch `_sicherung_`), Sicherungs-Branches und eigene Commits. Gibt es welche:
+    GUI listet sie und fragt „Projekte behalten / auch löschen / Abbrechen“; headless bleibt
+    `prj\` stehen, außer mit `--uninstall --mit-projekten`
+  - gelöscht werden nur diese bekannten Unterordner; `C:\ms\sl` selbst nur, wenn es danach
+    leer ist (fremde Dateien bleiben); läuft eine 4diac IDE → Abbruch ohne Änderung
 - [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 
 ## 6. Nicht-Ziele
