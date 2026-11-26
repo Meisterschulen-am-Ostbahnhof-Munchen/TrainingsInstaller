@@ -296,6 +296,7 @@ geklont; der 4diac-Workspace ist der Ordner `Ventilsteuerung\4diacIDE-workspace`
 | Training 1 (leer) | `C:\ms\sl\prj\4diac_training1_empty\Ventilsteuerung\4diacIDE-workspace` |
 | Slurry Tanker AX | `C:\ms\sl\prj\4diac-SlurryTanker_AX-sample\Ventilsteuerung\4diacIDE-workspace` |
 | Slurry Tanker | `C:\ms\sl\prj\4diac-SlurryTanker-sample\Ventilsteuerung\4diacIDE-workspace` |
+| Slurry Tanker Hutschienenmoped | `C:\ms\sl\prj\4diac-SlurryTanker-sample-Hutschienenmoped\Ventilsteuerung\4diacIDE-workspace` |
 | Easy Example Counter | `C:\ms\sl\prj\4diac_EasyExampleCounter\Ventilsteuerung\4diacIDE-workspace` |
 | Modbus TCP | `C:\ms\sl\prj\4diac_modbus_tcp_sample\Ventilsteuerung\4diacIDE-workspace` |
 | Modbus RTU | `C:\ms\sl\prj\4diac_modbus_rtu_sample\Ventilsteuerung\4diacIDE-workspace` |
@@ -900,6 +901,12 @@ noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json
       "workspace": "Ventilsteuerung/4diacIDE-workspace",
       "shortcut": "4diac – Slurry Tanker"
     },
+    "4diac-SlurryTanker-sample-Hutschienenmoped": {
+      "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac-SlurryTanker-sample-Hutschienenmoped.git",
+      "ref": "v0.28q",
+      "workspace": "Ventilsteuerung/4diacIDE-workspace",
+      "shortcut": "4diac – Slurry Tanker Hutschienenmoped"
+    },
     "4diac_EasyExampleCounter": {
       "url": "https://github.com/Meisterschulen-am-Ostbahnhof-Munchen/4diac_EasyExampleCounter.git",
       "ref": "v0.28q",
@@ -954,13 +961,13 @@ Damit steht im Manifest bei **allen** Repos derselbe Tag.
 **Aufgenommen** (Stand 2026-11-26, alle auf IDE 3.x mit `.lib` im Workspace, Branch
 `main`, Workspace `Ventilsteuerung/4diacIDE-workspace`, Projekt `test`, alle im
 `.lib`-Sync): `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`,
-`4diac-SlurryTanker-sample`, `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`,
+`4diac-SlurryTanker-sample`, `4diac-SlurryTanker-sample-Hutschienenmoped`, `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`,
 `4diac_modbus_rtu_sample`, `4diac_empty1`, `4diac-frequency-converter-sample-APIXON`
-(dort heißt das Projekt **`FU_Demo`** statt `test`). Die beiden SlurryTanker,
+(dort heißt das Projekt **`FU_Demo`** statt `test`). Die drei SlurryTanker,
 `modbus_rtu` und APIXON sind ab dem training1-Release `v0.28q` im Sync (training1 PR #422).
 
-**Noch nicht aufgenommen** (nicht umgestellt): `4diac-SlurryTanker-sample-Hutschienenmoped`,
-`4diac_template`. Sie kommen ins Manifest, sobald sie umgestellt sind und im Sync laufen.
+**Noch nicht aufgenommen** (nicht umgestellt): `4diac_template`. Es kommt ins Manifest,
+sobald es umgestellt ist und im Sync läuft.
 
 Ab `v0.28q` enthält jedes Repo auch `Ventilsteuerung/scripts_central` (Preload,
 Deploy-Basis, `elf_manager_gui.py`) sowie `test/scripts/RunSkript_PreloadELF.bat`,
@@ -1063,6 +1070,7 @@ C:\ms\sl\
 │   ├── 4diac_training1_empty\
 │   ├── 4diac-SlurryTanker_AX-sample\
 │   ├── 4diac-SlurryTanker-sample\
+│   ├── 4diac-SlurryTanker-sample-Hutschienenmoped\
 │   ├── 4diac_EasyExampleCounter\
 │   ├── 4diac_modbus_tcp_sample\
 │   ├── 4diac_modbus_rtu_sample\
@@ -1152,7 +1160,7 @@ C:\ms\sl\
   die GitHub-API mit Nachfrage in der GUI (2026-11-26, siehe 3.3).
 - **`.lib`-Sync:** `.lib` samt ELFs per CI aus training1 in **alle** 4diac-Projekte der
   Org, gleicher Tag wie training1 (2026-11-25, siehe 3.2).
-- **Trainings-Repos im Manifest:** training1, _empty, beide SlurryTanker,
+- **Trainings-Repos im Manifest:** training1, _empty, drei SlurryTanker,
   EasyExampleCounter, modbus_tcp, modbus_rtu, empty1, APIXON (FU-Demo); ELF-Verwaltung nur einmal auf dem
   Desktop, je Projekt über die Launches in der IDE (2026-11-26, siehe 3.2).
 - **Trainings-Repos:** je Repo ein **Tag** statt `main`, lokaler Arbeits-Branch `arbeit`
