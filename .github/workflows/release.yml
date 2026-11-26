@@ -37,7 +37,10 @@ jobs:
           python-version: "3.x"
 
       - name: ZIP bauen (Tag muss zu version.txt passen)
-        run: python tools/build_release.py --tag "${{ github.ref_name }}" --out dist
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}   # nie direkt in den Befehl einsetzen (Code im Tag-Namen)
+        run: python tools/build_release.py --tag "$env:TAG" --out dist
 
       - name: Probestart aus dem ZIP (Bootstrap lädt Python, startet den Kern)
         shell: pwsh
@@ -51,10 +54,12 @@ jobs:
           if (-not (Test-Path "$env:MS_SL_ROOT\installer\version.txt")) { throw 'Installer wurde nicht nach installer\ kopiert' }
 
       - name: GitHub-Release anlegen
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: >
-          gh release create "${{ github.ref_name }}" dist/TrainingsInstaller.zip
-          --title "Trainings-Installer ${{ github.ref_name }}"
+          gh release create "$env:TAG" dist/TrainingsInstaller.zip
+          --title "Trainings-Installer $env:TAG"
           --notes-file dist/RELEASE_NOTES.md
           --verify-tag

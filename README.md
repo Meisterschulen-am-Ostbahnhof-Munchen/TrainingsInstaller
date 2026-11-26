@@ -47,7 +47,10 @@ oder das Repo vorübergehend aus dem Manifest nehmen. In CI läuft die Prüfung 
 
 1. `version.txt` erhöhen (bei neuem Manifest immer – eine Installer-Version = ein Satz
    Versionen), per PR nach `main`.
-2. Auf `main` taggen: `git tag v<version.txt> && git push origin v<version.txt>`.
+2. Auf `main` taggen (Git Bash):
+   ```
+   v="v$(cat version.txt)" && git tag "$v" && git push origin "$v"
+   ```
 3. `.github/workflows/release.yml` läuft dann:
    - Freigabe-Prüfung `check_manifest.py --full` und alle Tests – sonst **kein** Release;
    - `tools/build_release.py` baut `TrainingsInstaller.zip` (Tag muss zu `version.txt`
