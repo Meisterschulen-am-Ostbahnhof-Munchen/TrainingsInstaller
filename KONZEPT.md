@@ -934,10 +934,15 @@ ist der Ordner unter `C:\ms\sl\`.
 `tool_shortcuts`: Python-Werkzeuge aus dem Repo, die eine eigene Verknüpfung bekommen
 (gestartet mit `pythonw.exe`, Pfade relativ zum Repo-Ordner, siehe 2.5).
 
-Vorteile: neue Schulung = neues Manifest; Versionen werden festgenagelt; Prüfsummen
-sichern die Downloads ab.
+Vorteile: neue Schulung = neues Repo im Manifest; Versionen werden festgenagelt;
+Prüfsummen sichern die Downloads ab.
 
-❓ Ein Manifest pro Schulung (Profile, z. B. `--profile grundkurs`)?
+**Ein Manifest für alle Schulungen, keine Profile.** Jeder bekommt alle Trainings-Repos.
+Gründe: IDE, Firmware, Git und Python braucht ohnehin jeder (das ist fast der ganze
+Download); alle Repos tragen denselben Tag und passen zur selben Firmware; kein falsch
+gewähltes Profil, nur ein Satz Versionen zu testen; wer später einen anderen Kurs
+besucht, hat schon alles. Falls die Zahl der Repos einmal stört: Feld `"optional": true`
+je Repo (Häkchen in der GUI, headless `--repo <name>`) – vorgemerkt, nicht gebaut.
 
 ### 3.3 Verteilung, Manifest und Selbst-Update
 
@@ -1074,14 +1079,15 @@ C:\ms\sl\
 
 ### Offen
 
-1. **Ein Manifest oder Profile pro Schulung?** (z. B. `--profile grundkurs`, siehe 3.2)
-2. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
+1. **`--new-project`:** Push-Sperre über ungültige Push-URL so in Ordnung? (siehe 2.5;
    Namensprüfung ist festgelegt)
 
 ### Entschieden
 
 - **Plattform:** Windows only (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
 - **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
+- **Ein Manifest, keine Profile:** jeder bekommt alle Trainings-Repos (2026-11-26,
+  siehe 3.2).
 - **Versionen im Konzept:** nur Beispiele; verbindlich ist allein das `manifest.json` im
   Installer-Release (2026-11-26, siehe 3.2).
 - **Lehrer-Notebook:** dienstlich verwaltet, keine Admin-Rechte, Ordner unter `C:\`
