@@ -8,7 +8,7 @@ from . import core
 from .paths import Paths
 from .report import Reporter, setup_logging
 
-COMING = ("update", "new_project", "cleanup", "uninstall", "self_update")
+COMING = ("new_project", "cleanup", "uninstall", "self_update")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,7 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="installieren bzw. nachinstallieren, ohne Fenster")
     g.add_argument("--check", action="store_true", help="nur prüfen, nichts verändern")
     g.add_argument("--update", nargs="?", const="*", metavar="REPO",
-                   help="Trainings aktualisieren (folgt)")
+                   help="Trainings aktualisieren (alle oder nur REPO); geänderte .SUB werden gesichert")
     g.add_argument("--new-project", metavar="NAME", help="neues eigenes Projekt (folgt)")
     g.add_argument("--cleanup", action="store_true", help="alte Logs löschen (folgt)")
     g.add_argument("--uninstall", action="store_true", help="alles entfernen (folgt)")
@@ -41,7 +41,13 @@ def main(argv: list[str]) -> int:
     paths.ensure()
     logfile = setup_logging(paths.logs, console=True)
     rep = Reporter()
-    ok = core.check(rep, paths) if args.check else core.install(rep, paths)
+    if args.check:
+        ok = core.check(rep, paths)
+    elif args.update:
+        from . import update
+        ok = update.update(rep, paths, None if args.update == "*" else args.update)
+    else:
+        ok = core.install(rep, paths)
     print()
     print(rep.report.text())
     print(f"\nLog: {logfile}")
