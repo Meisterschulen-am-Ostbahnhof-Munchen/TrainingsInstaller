@@ -9,6 +9,7 @@ Konzept und Entscheidungen: [KONZEPT.md](KONZEPT.md).
 | Datei | Zweck |
 |---|---|
 | `install.cmd` | Doppelklick-Starter, ruft `install.ps1` auf |
+| `Neues Projekt.cmd` | Doppelklick: neues eigenes Projekt, fragt nach dem Namen |
 | `install.ps1` | Bootstrap (Windows PowerShell 5.1): lädt nur Python, startet dann den Hauptinstaller |
 | `trainings_installer/` | Hauptinstaller in Python: Kern (`core`), GUI (`gui`, tkinter), Konsole (`cli`) |
 | `manifest.json` | **verbindlicher** Stand: Versionen, URLs, SHA256, Repo-Tags, Firmware |
@@ -22,9 +23,11 @@ install.cmd                 GUI
 install.cmd --headless      installieren ohne Fenster
 install.cmd --check         nur prüfen
 install.cmd --update [REPO] Trainings aktualisieren (geänderte .SUB werden gesichert)
+install.cmd --new-project Maehwerk   neues eigenes Projekt (Kopie der leeren Vorlage)
+Neues Projekt.cmd           dasselbe per Doppelklick, fragt nur nach dem Namen
 ```
 
-`--new-project`, `--cleanup`, `--uninstall` und `--self-update` folgen.
+`--cleanup`, `--uninstall` und `--self-update` folgen.
 
 ## Manifest freigeben
 

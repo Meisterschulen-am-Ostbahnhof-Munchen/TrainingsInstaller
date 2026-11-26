@@ -24,7 +24,7 @@ from trainings_installer import manifest as mf  # noqa: E402
 
 ZIP_NAME = "TrainingsInstaller.zip"
 TOP = "TrainingsInstaller"
-FILES = ["install.cmd", "install.ps1", "manifest.json", "version.txt", "LIESMICH.txt"]
+FILES = ["install.cmd", "Neues Projekt.cmd", "install.ps1", "manifest.json", "version.txt", "LIESMICH.txt"]
 PACKAGE = "trainings_installer"
 # feste Zeit im ZIP: gleicher Inhalt = gleiche Datei (reproduzierbar)
 ZIP_TIME = (2020, 1, 1, 0, 0, 0)

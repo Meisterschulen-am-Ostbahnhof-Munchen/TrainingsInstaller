@@ -8,7 +8,7 @@ from . import core
 from .paths import Paths
 from .report import Reporter, setup_logging
 
-COMING = ("new_project", "cleanup", "uninstall", "self_update")
+COMING = ("cleanup", "uninstall", "self_update")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,7 +20,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--check", action="store_true", help="nur prüfen, nichts verändern")
     g.add_argument("--update", nargs="?", const="*", metavar="REPO",
                    help="Trainings aktualisieren (alle oder nur REPO); geänderte .SUB werden gesichert")
-    g.add_argument("--new-project", metavar="NAME", help="neues eigenes Projekt (folgt)")
+    g.add_argument("--new-project", nargs="?", const="", metavar="NAME",
+                   help="neues eigenes Projekt als Kopie der leeren Vorlage (ohne NAME: wird abgefragt)")
     g.add_argument("--cleanup", action="store_true", help="alte Logs löschen (folgt)")
     g.add_argument("--uninstall", action="store_true", help="alles entfernen (folgt)")
     g.add_argument("--self-update", action="store_true", help="Installer aktualisieren (folgt)")
@@ -37,12 +38,23 @@ def main(argv: list[str]) -> int:
         if getattr(args, name):
             print(f"--{name.replace('_', '-')} ist noch nicht verfügbar.")
             return 2
+    if args.new_project == "":
+        try:
+            args.new_project = input("Name des neuen Projekts (A–Z, 0–9, _ und -): ").strip()
+        except EOFError:
+            args.new_project = ""
+        if not args.new_project:
+            print("Kein Name eingegeben – nichts angelegt.")
+            return 2
     paths = Paths.default()
     paths.ensure()
     logfile = setup_logging(paths.logs, console=True)
     rep = Reporter()
     if args.check:
         ok = core.check(rep, paths)
+    elif args.new_project:
+        from . import new_project
+        ok = new_project.new_project(rep, paths, args.new_project)
     elif args.update:
         from . import update
         ok = update.update(rep, paths, None if args.update == "*" else args.update)

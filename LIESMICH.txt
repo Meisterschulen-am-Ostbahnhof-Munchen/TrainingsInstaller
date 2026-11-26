@@ -18,6 +18,12 @@ So geht's
      - „logiBUS ELF-Verwaltung“
    Im Startmenü zusätzlich „4diac Trainings-Installer“ für spätere Läufe.
 
+Eigenes neues Projekt
+---------------------
+Im Installer auf „Neues Projekt“ klicken (oder Doppelklick auf  Neues Projekt.cmd)
+und einen Namen eingeben, z. B. Maehwerk – nur Buchstaben A–Z, Ziffern, _ und -.
+Danach liegt auf dem Desktop „4diac – Maehwerk“.
+
 Fragt Windows beim Doppelklick nach („Der Computer wurde durch Windows geschützt“):
 ZIP vor dem Entpacken mit Rechtsklick → Eigenschaften → „Zulassen“ anhaken.
 

@@ -56,7 +56,7 @@ def own_projects(paths: Paths, m: dict) -> list[Path]:
         return []
     tpl = next(e for e in m["repos"].values() if e.get("template_for_new_projects"))
     return sorted(d for d in paths.prj.iterdir()
-                  if d.is_dir() and d.name not in m["repos"]
+                  if d.is_dir() and d.name not in m["repos"] and not d.name.startswith(".")
                   and (d / ".git").exists() and (d / tpl["workspace"]).is_dir())
 
 
