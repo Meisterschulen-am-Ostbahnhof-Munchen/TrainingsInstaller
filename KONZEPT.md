@@ -20,7 +20,7 @@ Installiert bzw. eingerichtet werden:
 | Eclipse 4diac IDE | Entwicklungsumgebung für IEC 61499         | **3.4.0 Milestone 2026-11-05_2214** – festgedübelt (siehe 2.1) |
 | 4diac IDE Auto-Import-Plugin | Projekte im Workspace beim Start automatisch importieren | **1.0.0** – festgedübelt (siehe 2.5) |
 | 4diac FORTE    | Laufzeitumgebung (lokal zum Testen)           | **nein** – wird nicht installiert |
-| logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **Build b-190** aus Release `v0.28m` von `4diac_training1` – festgedübelt (siehe 2.7) |
+| logiBUS-Firmware | ESP32-Firmware für alle 14 Board-Typen, passend zu den ELFs der Trainings-Repos (wird nur abgelegt, nicht geflasht) | **ein Build** aus einem Release von `4diac_training1` (welcher: `manifest.json`) – festgedübelt (siehe 2.7) |
 | Trainings-Repos | `4diac_training1`, `4diac_training1_empty`, `4diac-SlurryTanker_AX-sample`, `4diac_EasyExampleCounter` … (siehe 2.5) | je Repo ein **Tag** – festgedübelt (siehe 3.2) |
 | weitere …      | keine (kein VS Code, kein Wireshark, keine CAN-Treiber; ISO-Designer lädt jeder selbst, siehe 6) | **nein** |
 
@@ -648,7 +648,7 @@ werden nur **gemeinsam** gewechselt.
   sondern von den Deploy-/Preload-Skripten des Repos nach `/data/elf-libs/` auf das
   Gerät geladen.
 - **Wann passt beides?** Nur wenn Firmware und ELFs aus **demselben Build-Stand**
-  stammen. Die ABI-Nummer (`forte_abi`, heute 6; steht in jeder ELF als
+  stammen. Die ABI-Nummer (`forte_abi`, z. B. 6 bei `v0.28m`, 7 ab `v0.28p`; steht in jeder ELF als
   `ELFLIB:<name>:<version>:<forte_abi>:<arch>`) ist notwendig, aber nicht hinreichend:
   Braucht eine neuere Bibliothek eine Funktion, die erst eine neuere Firmware mitbringt,
   fällt das erst beim Laden auf dem Gerät auf (Beispiel: ELF aus `v0.28k` lädt nur mit
@@ -662,6 +662,9 @@ im Repo + Firmware im Release, beides kann nicht auseinanderlaufen. Hochgeladen 
 Release-Notes: `release_firmware.py --tag <tag> --build <build> --upload --notes`).
 Einzeldateien statt ZIP: Wer im Browser lädt, braucht nur `Application_<Board>.bin`.
 
+**Beispiel** (Stand `v0.28m`, wird hier nicht nachgezogen – der gültige Stand steht im
+`manifest.json` des Installer-Releases, siehe 3.2):
+
 | | |
 |---|---|
 | Release  | `4diac_training1` **v0.28m** |
@@ -671,7 +674,7 @@ Einzeldateien statt ZIP: Wer im Browser lädt, braucht nur `Application_<Board>.
 | Dateien  | je Target `Application_<Target>.bin` und `merged-flash_<Target>.bin`, 14 Targets = 28 Dateien, zusammen ca. **68 MB** |
 | Lizenz   | eigene Firmware (Meisterschule) |
 
-`firmware.json` (Auszug):
+`firmware.json` (Auszug, Beispiel `v0.28m`):
 
 ```json
 {
@@ -809,6 +812,11 @@ Was installiert wird, steht **nicht im Code**, sondern in `manifest.json`.
 bordeigen lesen (`ConvertFrom-Json`), TOML nicht – und Python ist zu diesem Zeitpunkt
 noch nicht installiert. Der Python-Hauptinstaller liest dieselbe Datei mit `json`.
 
+> **Alle Versionen, Tags, URLs und SHA256 in diesem Konzept sind Beispiele** (Stand der
+> jeweiligen Entscheidung). **Verbindlich ist nur das `manifest.json` im jeweiligen
+> Installer-Release** (siehe 3.3). Ein neuer training1-Tag ändert das Manifest, nicht
+> dieses Konzept.
+
 ```json
 {
   "git": {
@@ -893,8 +901,9 @@ Bei jedem training1-Release ersetzt ein CI-Workflow in training1 (`sync_lib.py`)
 Tags, je Repo als PR; nach dem Merge bekommt das Repo **denselben Tag wie training1**.
 Damit steht im Manifest bei **allen** Repos derselbe Tag.
 
-Stand 2026-11-25:
-- erste Sync-Runde: `4diac_EasyExampleCounter`, `4diac_modbus_tcp_sample`, `4diac_empty1`.
+Stand 2026-11-26 (nur zur Einordnung, wird nicht nachgezogen):
+- erste Sync-Runde: `4diac_modbus_tcp_sample`, `4diac_empty1` und
+  `4diac_training1_empty` tragen bereits denselben Tag wie training1 (`v0.28p`).
   `4diac_EasyExampleCounter` braucht vorher eine Handkorrektur (2 Typen gibt es in der
   neuen `.lib` nicht mehr, 3 Typen doppelt in Projekt und `.lib`).
 - `4diac-SlurryTanker_AX-sample` (`.metadata` inzwischen entfernt) ist noch im **alten
@@ -1059,6 +1068,8 @@ C:\ms\sl\
 
 - **Plattform:** Windows only (Schulvorgabe: macOS/Linux/ARM nicht zugelassen).
 - **Admin-Rechte:** ohne Admin; PATH über Benutzer-PATH (2.2).
+- **Versionen im Konzept:** nur Beispiele; verbindlich ist allein das `manifest.json` im
+  Installer-Release (2026-11-26, siehe 3.2).
 - **Offline:** Installation online; danach muss alles offline laufen.
 - **4diac IDE:** 3.4.0 Milestone 2026-11-05_2214, Bezug über GitHub Release (2.1).
 - **4diac FORTE:** wird **nicht** installiert (2026-11-13).
