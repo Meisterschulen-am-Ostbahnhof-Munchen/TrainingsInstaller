@@ -1,0 +1,28 @@
+4diac Trainings-Installer
+=========================
+
+Installiert alles für die 4diac-Schulung nach C:\ms\sl – ohne Administratorrechte:
+Git, Python, 4diac IDE (mit automatischem Projektimport), alle Trainings-Projekte
+und die logiBUS-Firmware (wird nur abgelegt, nicht auf Geräte gespielt).
+
+So geht's
+---------
+1. ZIP entpacken (z. B. in „Downloads“).
+2. Doppelklick auf  install.cmd
+3. Im Fenster auf „Installieren / Reparieren“ klicken. Internet ist nötig,
+   die Downloads sind zusammen rund 0,5 GB.
+4. Danach liegen auf dem Desktop:
+     - „4diac Projekte“            (Ordner mit allen Trainings)
+     - „4diac IDE“                 (IDE mit Workspace-Auswahl)
+     - „4diac – Training 1“ usw.   (IDE direkt mit dem jeweiligen Training)
+     - „logiBUS ELF-Verwaltung“
+   Im Startmenü zusätzlich „4diac Trainings-Installer“ für spätere Läufe.
+
+Fragt Windows beim Doppelklick nach („Der Computer wurde durch Windows geschützt“):
+ZIP vor dem Entpacken mit Rechtsklick → Eigenschaften → „Zulassen“ anhaken.
+
+Ohne Fenster (z. B. für Lehrkräfte):
+  install.cmd --headless     installieren
+  install.cmd --check        nur prüfen
+
+Probleme? Die Logdatei liegt unter C:\ms\sl\logs – bitte an die Lehrkraft geben.
