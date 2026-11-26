@@ -62,7 +62,7 @@ if ($hereFull -ne $instFull) {
     $tmp = Join-Path $Root 'installer.tmp'
     if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
     New-Item -ItemType Directory -Path $tmp | Out-Null
-    foreach ($item in @('install.cmd', 'install.ps1', 'manifest.json', 'version.txt', 'LIESMICH.txt', 'trainings_installer')) {
+    foreach ($item in @('install.cmd', 'Neues Projekt.cmd', 'install.ps1', 'manifest.json', 'version.txt', 'LIESMICH.txt', 'trainings_installer')) {
         $src = Join-Path $Here $item
         if (Test-Path $src) { Copy-Item -Path $src -Destination $tmp -Recurse -Force }
     }

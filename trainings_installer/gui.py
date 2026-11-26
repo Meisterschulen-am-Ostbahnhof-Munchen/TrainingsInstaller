@@ -8,7 +8,7 @@ from __future__ import annotations
 import queue
 import threading
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog, ttk
 
 from . import core
 from .paths import Paths
@@ -25,6 +25,7 @@ class App:
         self.paths.ensure()
         self.logfile = setup_logging(self.paths.logs, console=False)
         self.worker: threading.Thread | None = None
+        self.done_text = ""
 
         root.title("4diac Trainings-Installer")
         root.geometry("760x520")
@@ -41,11 +42,12 @@ class App:
         self.buttons = [
             ttk.Button(bar, text="Installieren / Reparieren", command=lambda: self.start(core.install)),
             ttk.Button(bar, text="Trainings aktualisieren", command=self.ask_update),
+            ttk.Button(bar, text="Neues Projekt", command=self.ask_new_project),
             ttk.Button(bar, text="Prüfen", command=lambda: self.start(core.check)),
         ]
         for b in self.buttons:
             b.pack(side="left", padx=(0, 6))
-        for text in ("Neues Projekt", "Aufräumen", "Deinstallieren"):
+        for text in ("Aufräumen", "Deinstallieren"):
             ttk.Button(bar, text=text, state="disabled").pack(side="left", padx=(0, 6))
 
         self.progress = ttk.Progressbar(root, mode="determinate")
@@ -80,9 +82,29 @@ class App:
             from . import update
             self.start(update.update)
 
-    def start(self, fn) -> None:
+    def ask_new_project(self) -> None:
+        from . import new_project
+        name = ""
+        while True:
+            name = simpledialog.askstring(
+                "Neues Projekt",
+                "Name des neuen Projekts (nur A–Z, 0–9, _ und -, z. B. Maehwerk):",
+                initialvalue=name, parent=self.root)
+            if name is None:
+                return
+            name = name.strip()
+            err = new_project.check_name(name, self.paths, core.load_manifest())
+            if not err:
+                break
+            messagebox.showerror("Neues Projekt", err)
+        self.start(lambda rep, paths: new_project.new_project(rep, paths, name),
+                   done_text="Fertig.\n\nDas Projekt startest du mit der Verknüpfung "
+                             f"„4diac – {name}“ auf dem Desktop.")
+
+    def start(self, fn, done_text: str = "") -> None:
         if self.worker and self.worker.is_alive():
             return
+        self.done_text = done_text
         for b in self.buttons:
             b.configure(state="disabled")
         self.progress.configure(value=0)
@@ -121,7 +143,8 @@ class App:
             b.configure(state="normal")
         self.write("step", "\n" + summary)
         if ok:
-            messagebox.showinfo("Fertig", "Fertig.\n\nDie 4diac-Verknüpfungen liegen auf dem Desktop.")
+            messagebox.showinfo("Fertig", self.done_text
+                                or "Fertig.\n\nDie 4diac-Verknüpfungen liegen auf dem Desktop.")
         else:
             messagebox.showerror("Fehler", f"Es gab Fehler – Details oben und im Log:\n{self.logfile}")
 

@@ -1132,7 +1132,8 @@ C:\ms\sl\
 
 ## 5. Weitere Funktionen
 
-- [ ] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5)
+- [x] `--new-project <Name>` – neues eigenes Projekt aus `4diac_training1_empty` (siehe 2.5;
+  GUI-Knopf „Neues Projekt“, Doppelklick `Neues Projekt.cmd`)
 - [ ] `--check` – nur prüfen, nichts verändern
 - [x] `--update [<repo>]` – Trainings aktualisieren, veränderte `.SUB` werden umbenannt gesichert
   (siehe 2.6; ersetzt das frühere `--reset-training`)
