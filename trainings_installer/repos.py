@@ -69,6 +69,8 @@ def all_workspaces(paths: Paths, m: dict) -> list[Path]:
 
 def at_ref(paths: Paths, d: Path, ref: str) -> bool:
     """Enthält der aktuelle Stand den Tag? (Schüler-Commits auf `arbeit` sind erlaubt.)"""
+    if not (d / ".git").exists():
+        return False   # (noch) nicht geklont
     try:
         git(paths, "rev-parse", "--verify", "--quiet", f"refs/tags/{ref}^{{commit}}", cwd=d)
         git(paths, "merge-base", "--is-ancestor", f"refs/tags/{ref}", "HEAD", cwd=d)

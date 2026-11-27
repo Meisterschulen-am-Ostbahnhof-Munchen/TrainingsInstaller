@@ -22,7 +22,8 @@ Konzept und Entscheidungen: [KONZEPT.md](KONZEPT.md).
 install.cmd                 GUI
 install.cmd --headless      installieren ohne Fenster
 install.cmd --check         nur prüfen
-install.cmd --update [REPO] Trainings aktualisieren (geänderte .SUB werden gesichert)
+install.cmd --update [REPO] Trainings und eigene Projekte aktualisieren (geänderte .SUB
+                            bzw. eigene Dateien bleiben, Sicherungs-Branch)
 install.cmd --new-project Maehwerk   neues eigenes Projekt (Kopie der leeren Vorlage)
 Neues Projekt.cmd           dasselbe per Doppelklick, fragt nur nach dem Namen
 install.cmd --cleanup       alte Downloads und Logs > 90 Tage löschen (Sicherungen bleiben)
