@@ -70,5 +70,10 @@ def activate(paths: Paths, neu: Path, data: dict, rep: Reporter) -> None:
     if paths.firmware.exists():
         shutil.rmtree(paths.firmware)
     neu.rename(paths.firmware)
-    rep.done(f"Firmware {data.get('build')} abgelegt in {paths.firmware} – "
-             f"Geräte bitte aktualisieren (Application_<Board>.bin im Browser hochladen)")
+    rep.done(f"Firmware {data.get('build')} abgelegt in {paths.firmware}")
+    # Projekte und ELFs passen nur zu genau dieser Firmware (KONZEPT 2.7) – der Installer
+    # flasht nicht, also deutlich im Bericht erinnern
+    rep.warn(f"Geräte auf Firmware {data.get('build')} aktualisieren "
+             "(Application_<Board>.bin aus dem Ordner firmware im Browser hochladen). "
+             "Mit älterer Firmware laden die ELF-Bibliotheken der Projekte nicht "
+             "(z. B. fehlen dann alle logiBUS-IOs).")
