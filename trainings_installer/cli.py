@@ -8,7 +8,7 @@ from . import core
 from .paths import Paths
 from .report import Reporter, setup_logging
 
-COMING = ("self_update",)
+COMING: tuple[str, ...] = ()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,7 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="neues eigenes Projekt als Kopie der leeren Vorlage (ohne NAME: wird abgefragt)")
     g.add_argument("--cleanup", action="store_true", help="alte Downloads und Logs älter als 90 Tage löschen (Sicherungen bleiben)")
     g.add_argument("--uninstall", action="store_true", help=r"alles entfernen; C:\ms\sl\prj nur, wenn dort keine Schülerarbeit liegt")
-    g.add_argument("--self-update", action="store_true", help="Installer aktualisieren (folgt)")
+    g.add_argument("--self-update", action="store_true", help="Installer auf die neueste Version aktualisieren (GitHub-Release, SHA256 geprüft)")
     g.add_argument("--gui", action="store_true", help="grafische Oberfläche")
     p.add_argument("--mit-projekten", action="store_true",
                    help=r"mit --uninstall: auch C:\ms\sl\prj samt Schülerarbeit löschen")
@@ -55,7 +55,16 @@ def main(argv: list[str]) -> int:
     paths.ensure()
     logfile = setup_logging(paths.logs, console=True)
     rep = Reporter()
-    if args.check:
+    if not (args.uninstall or args.self_update):
+        from . import selfupdate
+        selfupdate.notice(rep, core.installer_version())
+    if args.self_update:
+        from . import selfupdate
+        ok = selfupdate.self_update(rep, paths)
+        if ok and (paths.root / "installer.neu" / "version.txt").is_file():
+            rep.warn("Die neue Version wird gleich nach diesem Lauf übernommen "
+                     "(sonst beim nächsten Start von install.cmd).")
+    elif args.check:
         ok = core.check(rep, paths)
     elif args.uninstall:
         from . import uninstall

@@ -30,5 +30,7 @@ ZIP vor dem Entpacken mit Rechtsklick → Eigenschaften → „Zulassen“ anhak
 Ohne Fenster (z. B. für Lehrkräfte):
   install.cmd --headless     installieren
   install.cmd --check        nur prüfen
+  install.cmd --self-update  Installer auf die neueste Version bringen
+                             (das Fenster fragt beim Start selbst nach)
 
 Probleme? Die Logdatei liegt unter C:\ms\sl\logs – bitte an die Lehrkraft geben.

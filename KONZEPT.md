@@ -1074,6 +1074,25 @@ Der laufende Installer ersetzt sich nicht selbst, während er läuft: Das Austau
 `installer\` erledigt `install.ps1` beim Neustart (Python ist dann beendet, keine
 gesperrten Dateien).
 
+Umsetzung (`selfupdate.py`, `install.ps1`):
+- Ohne SHA256-Digest am Asset wird **nicht** aktualisiert (nicht prüfbar). Entpackt wird nur
+  unter `TrainingsInstaller/`, Pfade nach außen werden abgelehnt; danach müssen
+  `version.txt` (= Tag) und `manifest.json` (gültig) stimmen. Erst dann wird
+  `installer.neu.tmp` zu `installer.neu` umbenannt.
+- **GUI:** Prüfung im Hintergrund beim Start; nach „Ja“ laden, dann startet sie
+  `install.ps1` versteckt neu. Das wartet auf das Ende des alten Prozesses
+  (`MS_SL_WAIT_PID`) und übernimmt dann.
+- **Konsole:** `--self-update` legt `installer.neu` bereit; `install.ps1` übernimmt es direkt
+  nach dem Python-Lauf. Alle anderen Konsolen-Aufrufe (außer `--uninstall`) zeigen nur den
+  Hinweis.
+- Übernahme: `installer` → `installer.alt` umbenennen (bis 10 s Wiederholung, falls noch
+  gesperrt), `installer.neu` → `installer`, dann `installer.alt` löschen. Klappt das
+  Umbenennen nicht, läuft die bisherige Version weiter und `installer.neu` wird beim
+  nächsten Start übernommen – nie ein halb gelöschtes `installer\`.
+- Die GitHub-API erlaubt ohne Login 60 Abfragen pro Stunde und IP. Ein ganzer Kursraum
+  hinter einer IP kann das überschreiten; dann wird die Prüfung still übersprungen,
+  `--self-update` meldet den Fehler.
+
 ### 3.4 Verzeichnisstruktur auf dem Ziel-PC (Vorschlag)
 
 ```
@@ -1149,7 +1168,7 @@ C:\ms\sl\
     `prj\` stehen, außer mit `--uninstall --mit-projekten`
   - gelöscht werden nur diese bekannten Unterordner; `C:\ms\sl` selbst nur, wenn es danach
     leer ist (fremde Dateien bleiben); läuft eine 4diac IDE → Abbruch ohne Änderung
-- [ ] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
+- [x] Selbst-Update beim Start bzw. `--self-update` (siehe 3.3)
 
 ## 6. Nicht-Ziele
 
